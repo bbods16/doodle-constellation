@@ -5,7 +5,6 @@ description:
   "Doodle Constellation: an OCaml star-pattern matcher with a raylib front end, a from-scratch transformer recogniser, and Lean 4 proofs of the geometry."
 maintainer: ["bbods16"]
 authors: ["bbods16"]
-license: "MIT"
 tags: ["astronomy" "ocaml" "raylib" "lean"]
 homepage: "https://github.com/bbods16/doodle-constellation"
 doc:

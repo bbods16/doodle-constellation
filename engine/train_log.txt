@@ -18,3 +18,15 @@ epoch 15  loss 0.2773  val acc 0.9942  726s
 epoch 16  loss 0.2748  val acc 0.9939  754s
 epoch 17  loss 0.2730  val acc 0.9946  781s
 epoch 18  loss 0.2720  val acc 0.9946  818s
+epoch 19  loss 0.2715  val acc 0.9944  848s
+epoch 20  loss 0.2712  val acc 0.9944  875s
+confusion (rows = truth):
+  Big Dipper       [999, 0, 0, 0, 0, 0, 0, 1]
+  Cassiopeia       [0, 996, 0, 0, 0, 0, 0, 4]
+  Orion            [0, 0, 1000, 0, 0, 0, 0, 0]
+  Northern Cross   [0, 0, 0, 1000, 0, 0, 0, 0]
+  Leo              [0, 0, 0, 0, 997, 2, 0, 1]
+  Summer Triangle  [0, 0, 0, 0, 1, 988, 11, 0]
+  Winter Triangle  [0, 0, 0, 0, 0, 14, 985, 1]
+  none             [3, 2, 3, 0, 1, 1, 0, 990]
+wrote data/engine_weights.txt and data/engine_testvec.txt
