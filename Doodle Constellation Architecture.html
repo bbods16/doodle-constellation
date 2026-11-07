@@ -1,0 +1,417 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Doodle Constellation Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400&display=swap">
+<style>
+/* Layout: encyclopedia article, single reading column with a right-floated infobox on wide screens, stacked on phones */
+:root{
+  --bg:#ffffff; --fg:#202122; --muted:#54595d; --rule:#a2a9b1; --panel:#f8f9fa;
+  --link:#3366cc; --link-visited:#795cb2; --accent:#2a4b8d; --shade:#eaf3ff; --line:#72777d;
+  --serif:"Source Serif 4", "Linux Libertine", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"Source Code Pro", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101418; --fg:#eaecf0; --muted:#a2a9b1; --rule:#3d434a; --panel:#181d23;
+  --link:#88a3e8; --link-visited:#b49ae0; --accent:#9fb6ee; --shade:#16223a; --line:#8a9099; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101418; --fg:#eaecf0; --muted:#a2a9b1; --rule:#3d434a; --panel:#181d23;
+  --link:#88a3e8; --link-visited:#b49ae0; --accent:#9fb6ee; --shade:#16223a; --line:#8a9099; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.page{max-width:960px;margin:0 auto}
+a{color:var(--link);text-decoration:none}
+a:visited{color:var(--link-visited)}
+a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1.2;margin:0 0 4px;padding-bottom:6px;border-bottom:1px solid var(--rule);text-wrap:balance}
+.from{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+.hatnote{font-style:italic;color:var(--muted);padding-left:1.6em;margin:0 0 14px;font-size:.95rem}
+h2{font-family:var(--serif);font-weight:400;font-size:1.5rem;margin:28px 0 10px;padding-bottom:4px;border-bottom:1px solid var(--rule);text-wrap:balance;clear:right}
+h3{font-family:var(--sans);font-weight:600;font-size:1.08rem;margin:20px 0 6px}
+p{margin:0 0 12px}
+.prose p,.prose li{max-width:68ch}
+ul{margin:0 0 12px;padding-left:1.4em}
+li{margin-bottom:4px}
+.infobox{float:right;clear:right;width:300px;margin:0 0 16px 22px;border:1px solid var(--rule);background:var(--panel);font-size:.88rem;line-height:1.45}
+.infobox .cap{font-family:var(--serif);font-size:1.15rem;text-align:center;padding:8px 10px;background:var(--shade);font-weight:600}
+.infobox dl{margin:0;padding:6px 10px 10px;display:grid;grid-template-columns:96px 1fr;gap:6px 10px}
+.infobox dt{font-weight:600}
+.infobox dd{margin:0;min-width:0}
+.toc{display:inline-block;border:1px solid var(--rule);background:var(--panel);padding:10px 18px 10px 14px;margin:6px 0 16px;font-size:.92rem}
+.toc .ttl{font-weight:600;text-align:center;margin-bottom:4px}
+.toc ol{margin:0;padding-left:1.3em}
+.toc li{margin:2px 0}
+.num{font-variant-numeric:tabular-nums;color:var(--muted);margin-right:4px}
+figure{margin:12px 0 16px;border:1px solid var(--rule);background:var(--panel);padding:10px}
+.svgwrap{overflow-x:auto}
+.svgwrap svg{display:block;min-width:680px;width:100%;height:auto}
+figcaption{font-size:.88rem;color:var(--muted);margin-top:8px}
+svg .box{fill:var(--bg);stroke:var(--accent);stroke-width:1.4}
+svg .box.off{stroke:var(--line);stroke-dasharray:0}
+svg .lane{fill:none;stroke:var(--line);stroke-dasharray:5 4}
+svg .lanelab{fill:var(--muted);font:600 11px var(--sans);letter-spacing:.06em}
+svg .bt{fill:var(--fg);font:600 13px var(--sans)}
+svg .bs{fill:var(--muted);font:11px var(--sans)}
+svg .ar{fill:none;stroke:var(--line);stroke-width:1.3}
+svg .al{fill:var(--muted);font:italic 11px var(--sans)}
+svg .head{fill:var(--line)}
+details{border:1px solid var(--rule);background:var(--panel);margin-top:8px}
+summary{cursor:pointer;padding:6px 10px;font-weight:600;font-size:.9rem}
+summary:focus-visible{outline:2px solid var(--accent)}
+pre{margin:0;padding:10px 12px;overflow-x:auto;font-family:var(--mono);font-size:.8rem;line-height:1.5;border-top:1px solid var(--rule)}
+.build{background:var(--shade);border:1px solid var(--rule);padding:4px 16px 12px;margin-top:28px}
+.build h2{border-bottom-color:var(--rule)}
+.tier{font-weight:600}
+@media (max-width:720px){
+  .infobox{float:none;width:auto;margin:0 0 16px}
+  h1{font-size:1.65rem}
+  .toc{display:block}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+code{font-family:var(--mono);font-size:.86em;background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:0 3px;overflow-wrap:anywhere}
+.impl{border:1px solid var(--rule);border-left:3px solid var(--accent);background:var(--panel);padding:8px 14px 4px;margin:8px 0 16px;max-width:80ch}
+.impl .ih{font:600 .78rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+.impl p{margin:0 0 8px;max-width:none}
+.impl ol{margin:0 0 8px;padding-left:1.4em}
+.impl li{margin-bottom:3px}
+.impl table.data{margin:4px 0 10px;background:var(--bg)}
+.impl table.data th{width:9.5em}
+pre.sig{border:1px solid var(--rule);background:var(--bg);margin:4px 0 10px;white-space:pre;overflow-x:auto}
+.tablewrap{overflow-x:auto}
+</style>
+
+<main class="page">
+<h1>Doodle Constellation</h1>
+<p class="from">From the architecture wiki</p>
+<p class="hatnote">This article is about the architecture of sketch-to-sky matching systems, using the Doodle Constellation design as its reference. For related systems that identify photographs of the sky, see Variants. The reference build is a desktop program in <a href="https://ocaml.org" target="_blank" rel="noopener">OCaml</a> with <a href="https://github.com/tjammer/raylib-ocaml" target="_blank" rel="noopener">raylib-ocaml</a>. Each component below ends with how it is built there, and the <a href="#lineage">algorithm lineage</a> shows which parts are adapted from GIMP.</p>
+
+<aside class="infobox" aria-label="Summary">
+  <div class="cap">Doodle Constellation</div>
+  <dl>
+    <dt>Type</dt><dd>Interactive shape-retrieval system over a <a href="https://en.wikipedia.org/wiki/Bright_Star_Catalogue" target="_blank" rel="noopener">star catalogue</a></dd>
+    <dt>Input</dt><dd>A freehand drawing of 5 to 9 corners</dd>
+    <dt>Output</dt><dd>Matched real stars, a sky view, a viewing time and a narrated story</dd>
+    <dt>Core components</dt><dd>Stroke simplifier, <a href="https://en.wikipedia.org/wiki/Geometric_hashing" target="_blank" rel="noopener">geometric-hashing</a> index, candidate generator, <a href="https://en.wikipedia.org/wiki/Procrustes_analysis" target="_blank" rel="noopener">Procrustes</a> fitter, sky renderer</dd>
+    <dt>Key properties</dt><dd><a href="https://en.wikipedia.org/wiki/Similarity_(geometry)" target="_blank" rel="noopener">Similarity invariance</a>, sub-3-second response, naked-eye visibility</dd>
+    <dt>Build</dt><dd>OCaml with raylib-ocaml, one desktop process, built with dune</dd><dt>Algorithm sources</dt><dd>Smoothing, simplifying and point-pair transforms adapted from GIMP; least-squares fit written new. See <a href="#lineage">lineage</a></dd><dt>Variants</dt><dd>Photo plate solving, spacecraft star identification, generic <a href="https://en.wikipedia.org/wiki/Point-set_registration" target="_blank" rel="noopener">point-set registration</a></dd>
+    <dt>Related</dt><dd><a href="https://en.wikipedia.org/wiki/Asterism_(astronomy)" target="_blank" rel="noopener">Asterism</a>, <a href="https://en.wikipedia.org/wiki/Pareidolia" target="_blank" rel="noopener">pareidolia</a>, <a href="https://en.wikipedia.org/wiki/Planetarium_software" target="_blank" rel="noopener">planetarium software</a></dd>
+  </dl>
+</aside>
+
+<div class="prose">
+<p>A <b>Doodle Constellation</b> system takes a shape a person draws on a phone or in a desktop window and finds a set of real stars whose arrangement on the sky matches it. The result behaves like a personal <a href="https://en.wikipedia.org/wiki/Asterism_(astronomy)" target="_blank" rel="noopener">asterism</a>, an informal star pattern as opposed to one of the 88 official <a href="https://en.wikipedia.org/wiki/IAU_designated_constellations" target="_blank" rel="noopener">IAU constellations</a>. The system then shows where that patch of sky is, when it is best placed for the user tonight, and tells a short invented myth about it.</p>
+<p>The input is a single stroke, simplified to a handful of corner points. The output is a list of named stars, the rotation and scale that map the drawing onto them, a fit-quality number, and a rendered sky view. The defining property is <a href="https://en.wikipedia.org/wiki/Similarity_(geometry)" target="_blank" rel="noopener">similarity invariance</a>: a drawing matches a star pattern no matter how large it was drawn or which way it was turned.</p>
+<p>The core problem is a form of <a href="https://en.wikipedia.org/wiki/Point-set_registration" target="_blank" rel="noopener">point-set registration</a> without known correspondences. The system solves it the way astronomical plate solvers do, by hashing small groups of stars into shape keys that ignore position, scale and rotation, so that a drawing can be looked up instead of compared against every possible star combination.</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <div class="ttl">Contents</div>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#diagram">Architecture diagram</a></li>
+    <li><a href="#operation">Operation</a></li>
+    <li><a href="#properties">Properties</a></li>
+    <li><a href="#tradeoffs">Design trade-offs</a></li>
+    <li><a href="#lineage">Algorithm lineage</a></li>
+    <li><a href="#variants">Variants</a></li>
+    <li><a href="#history">History</a></li>
+    <li><a href="#seealso">See also</a></li>
+    <li><a href="#building">Building one</a></li>
+  </ol>
+</nav>
+
+<section class="prose">
+<h2 id="overview">Overview</h2>
+<p>The system is usually split into two tiers. The <b>offline tier</b> runs once, when the service starts: it loads a catalogue of bright stars and precomputes an index of the shapes that small groups of nearby stars make. The <b>online tier</b> runs for every drawing: it simplifies the stroke, looks up candidate star groups in the index, fits and scores each candidate, and hands the winner to the presentation layer.</p>
+<p>The presentation layer has three parts that run side by side once a match exists. A renderer draws the sky and animates the drawing onto it, a visibility calculator works out when the region is highest from the user's location, and a narration layer turns the star names into a spoken story. Only the online matching path is time-critical; everything after it can stream in.</p>
+</section>
+
+<section class="prose">
+<h2 id="architecture">Architecture</h2>
+
+<h3>Sketch capture</h3>
+<p>The sketch capture component is the drawing surface. It records the user's finger or mouse path as an ordered list of screen points, plus an optional name for the shape. It hands the raw stroke to the stroke simplifier. It owns no lasting state beyond the current drawing, and it exists so that every later stage receives clean, ordered geometry rather than input events.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Capture</code></td></tr><tr><th>raylib calls</th><td><code>is_mouse_button_down MouseButton.Left</code>, <code>get_mouse_position ()</code> (or <code>get_touch_position 0</code> on a touch screen)</td></tr><tr><th>Adapted from</th><td><a href="https://github.com/GNOME/gimp/blob/master/app/display/gimpmotionbuffer.c#L253" target="_blank" rel="noopener"><code>gimpmotionbuffer.c</code></a> drops moves smaller than half a screen pixel; <a href="https://github.com/GNOME/gimp/blob/master/app/paint/gimppaintcore.c#L1664" target="_blank" rel="noopener"><code>gimppaintcore.c</code></a> smooths each point as a Gaussian-weighted average of recent points. Commits <a href="https://github.com/GNOME/gimp/commit/e09520fb08" target="_blank" rel="noopener"><code>e09520fb08</code></a>, <a href="https://github.com/GNOME/gimp/commit/082aa272a4" target="_blank" rel="noopener"><code>082aa272a4</code></a>.</td></tr><tr><th>What changes</th><td>raylib gives one sample per frame and no per-event timestamps, so the filter step is 2 px and the Gaussian weight falls off with distance back along the stroke instead of with accumulated velocity.</td></tr></table></div><ol><li>Each frame, while the left button is down, read <code>get_mouse_position ()</code> and convert it to a plain <code>{x; y}</code> record.</li><li>Movement filter: skip the sample if it is less than 2 px from the last kept point.</li><li>Smoothing: replace the new point with a weighted mean of the last 8 kept points. Weight w = exp(−d² / 2σ²), where d is distance back along the stroke and σ is about 6 px.</li><li>Append the smoothed point. On button release, hand <code>stroke</code> to the simplifier.</li><li>Keep raylib types out of this module's logic. Points become <code>Vector2.t</code> only when drawn, so the module can be tested without opening a window.</li></ol><pre class="sig">type pt = { x : float; y : float }        (* in Geom *)
+type t                                     (* raw and smoothed points *)
+val empty  : t
+val add    : t -&gt; pt -&gt; t                  (* filter + smooth one sample *)
+val stroke : t -&gt; pt array                 (* smoothed points, in order *)</pre></div>
+
+<h3>Stroke simplifier</h3>
+<p>The stroke simplifier reduces hundreds of jittery points to the 5 to 9 corners that carry the shape, typically with the <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm" target="_blank" rel="noopener">Ramer–Douglas–Peucker algorithm</a>, which drops points that lie close to the line between their neighbours. It receives the raw stroke from sketch capture and passes the corner list to the candidate generator, rejecting shapes that are too simple (a straight line) or too complex. A star pattern has only a few stars, so matching the raw stroke would compare unlike things.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Simplify</code></td></tr><tr><th>raylib calls</th><td>none (pure OCaml)</td></tr><tr><th>Adapted from</th><td><a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpboundary.c#L944" target="_blank" rel="noopener"><code>gimpboundary.c simplify_subdivide</code></a>: recursive subdivision with a cross-product distance test and a special case for closed loops.</td></tr><tr><th>What changes</th><td>GIMP splits each piece at its midpoint. Doodle splits at the farthest point, which is true Ramer–Douglas–Peucker. The tolerance is relative to the drawing's size, and a retry loop lands the result on 5 to 9 corners. Smoothing moves into <code>Capture</code>, so the stroke arrives already smoothed.</td></tr></table></div><ol><li>Set ε to 4% of the stroke's bounding-box diagonal.</li><li>Line check: if no point is farther than 8% of the diagonal from the first-to-last chord, return <code>Error `Too_simple</code>.</li><li>RDP on the range [i, j]: for each point p between them, d = |dx·(a.y − p.y) − dy·(a.x − p.x)|, with a = point i and (dx, dy) = point j − point i. This is GIMP's test: it equals the true distance times the chord length, so compare it with ε·length and skip the square root inside the loop.</li><li>If the largest d is at most ε·length, keep only point i. Otherwise recurse on [i, k] and [k, j], where k is the farthest point.</li><li>Closed stroke (start within ε of end): measure plain distance from the start point instead, as GIMP does when both ends coincide.</li><li>Count the corners. Over 9: raise ε by 30%. Under 5: lower it by 30%. Try at most 5 times, then return <code>Error `Too_complex</code> or <code>`Too_simple</code>.</li></ol><pre class="sig">type reason = [ `Too_simple | `Too_complex ]
+val corners : Geom.pt array -&gt; (Geom.pt array, reason) result</pre></div>
+
+<h3>Star catalogue store</h3>
+<p>The catalogue store holds every star the system may use, with its position in the <a href="https://en.wikipedia.org/wiki/Equatorial_coordinate_system" target="_blank" rel="noopener">equatorial coordinate system</a> (<a href="https://en.wikipedia.org/wiki/Right_ascension" target="_blank" rel="noopener">right ascension</a> and <a href="https://en.wikipedia.org/wiki/Declination" target="_blank" rel="noopener">declination</a>), its <a href="https://en.wikipedia.org/wiki/Apparent_magnitude" target="_blank" rel="noopener">apparent magnitude</a> (brightness, where smaller numbers are brighter), a proper name where one exists, and its parent constellation. It is filled from a public source such as the <a href="https://en.wikipedia.org/wiki/Bright_Star_Catalogue" target="_blank" rel="noopener">Bright Star Catalogue</a> or a subset of the <a href="https://en.wikipedia.org/wiki/Hipparcos" target="_blank" rel="noopener">Hipparcos</a> catalogue, cut to stars bright enough to see without a telescope. It supplies positions to the index builder and to the fitter.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Catalogue</code></td></tr><tr><th>raylib calls</th><td>none</td></tr><tr><th>Adapted from</th><td>No GIMP counterpart.</td></tr><tr><th>What changes</th><td>Read the CSV once at startup with <code>In_channel</code> and <code>String.split_on_char</code>. Keep stars with magnitude 4.5 or brighter in a <code>star array</code>.</td></tr></table></div><pre class="sig">type star = { id : int; name : string; ra : float; dec : float; mag : float; con : string }
+val load : string -&gt; star array</pre></div>
+
+<h3>Invariant index builder</h3>
+<p>The index builder takes every small group of nearby stars, usually triangles within about 25 degrees of each other, and describes each by numbers that stay the same under moving, scaling and rotating: the ratios of its side lengths and one of its angles. It projects each local patch of sky onto a flat plane first, using a <a href="https://en.wikipedia.org/wiki/Gnomonic_projection" target="_blank" rel="noopener">gnomonic projection</a>, so that flat-geometry measurements are valid. These shape keys are rounded into bins and stored in a <a href="https://en.wikipedia.org/wiki/Hash_table" target="_blank" rel="noopener">hash table</a> that maps each key to the star groups that produce it. This is the technique called <a href="https://en.wikipedia.org/wiki/Geometric_hashing" target="_blank" rel="noopener">geometric hashing</a>. The index is what turns an otherwise enormous search into a lookup.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Index</code> (uses <code>Geom.gnomonic</code>)</td></tr><tr><th>raylib calls</th><td>none</td></tr><tr><th>Adapted from</th><td>No GIMP counterpart. The design follows Astrometry.net.</td></tr><tr><th>What changes</th><td>A <code>(int * int * int, int * int * int) Hashtbl.t</code> from the binned key to star-index triples. It uses the same key function as the candidate generator, so the drawn and catalogued shapes are binned identically.</td></tr></table></div><pre class="sig">type t
+val build : Catalogue.star array -&gt; t
+val key   : Geom.pt -&gt; Geom.pt -&gt; Geom.pt -&gt; (int * int * int) * int array
+(* key also returns the corners reordered by side length *)</pre></div>
+
+<h3>Candidate generator</h3>
+<p>The candidate generator receives the simplified drawing, forms triangles from its corners, computes the same shape keys, and looks each up in the index, tolerating one bin of error to allow for a shaky hand. Every hit is a hypothesis: these three drawn corners might be those three stars. From each hit it derives the <a href="https://en.wikipedia.org/wiki/Similarity_(geometry)" target="_blank" rel="noopener">similarity transform</a> (a scale, rotation and shift) that would place the drawing on the sky, and passes these hypotheses to the fitter. It owns nothing persistent.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Candidates</code> (uses <code>Geom.sim_of_pair</code>)</td></tr><tr><th>raylib calls</th><td>none (pure OCaml)</td></tr><tr><th>Adapted from</th><td>The two-handle case of the Handle Transform tool, <a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolhandlegrid.c#L773" target="_blank" rel="noopener"><code>gimptoolhandlegrid.c case 2</code></a>, and <a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolpolygon.c#L518" target="_blank" rel="noopener"><code>gimptoolpolygon.c fit_segment</code></a>: one pair of points fixes scale, rotation and shift. Commit <a href="https://github.com/GNOME/gimp/commit/2989bad35a" target="_blank" rel="noopener"><code>2989bad35a</code></a>.</td></tr><tr><th>What changes</th><td>GIMP moves image handles. Doodle returns the transform as a record, and chooses the triangle's longest side as the pair because a long baseline gives the steadiest angle.</td></tr></table></div><ol><li>Form every triangle of 3 corners (at most 84 for 9 corners).</li><li>Key: sort the sides by length, take the two ratios short/long and middle/long and the angle opposite the longest side, and round each to a bin. Sorting fixes which corner matches which star.</li><li>Look up the key and its 26 neighbouring bins (±1 in each of the 3 parts) with <code>Hashtbl.find_all</code>.</li><li>For each hit, pair the drawn longest side (a, b) with the star longest side (A, B).</li><li>Similarity: s = |B − A| / |b − a|; θ = atan2(B − A) − atan2(b − a); shift t = A − s·R(θ)·a. Then T(p) = s·R(θ)·p + t.</li><li>Emit the hypothesis. Nothing is stored between drawings.</li></ol><pre class="sig">type sim = { s : float; theta : float; tx : float; ty : float }   (* in Geom *)
+val sim_of_pair : Geom.pt -&gt; Geom.pt -&gt; Geom.pt -&gt; Geom.pt -&gt; Geom.sim
+(* sim_of_pair a b a' b' maps a to a' and b to b' *)
+
+type hypothesis = { corners : int array; stars : int array; sim : Geom.sim }
+val generate : Index.t -&gt; Geom.pt array -&gt; hypothesis list</pre></div>
+
+<h3>Similarity fitter and scorer</h3>
+<p>The fitter tests each hypothesis against the whole drawing. It projects every remaining corner onto the sky, finds the nearest unused bright star to each by <a href="https://en.wikipedia.org/wiki/Nearest_neighbor_search" target="_blank" rel="noopener">nearest neighbour search</a>, and refines the transform with <a href="https://en.wikipedia.org/wiki/Procrustes_analysis" target="_blank" rel="noopener">Procrustes analysis</a>, the least-squares way of overlaying one point set on another. It scores the result by the <a href="https://en.wikipedia.org/wiki/Root_mean_square_deviation" target="_blank" rel="noopener">root-mean-square deviation</a> between corners and stars, penalised for faint stars and for bright stars that fall inside the shape but were not used. Trying many hypotheses and keeping the one most of the points agree with follows the logic of <a href="https://en.wikipedia.org/wiki/Random_sample_consensus" target="_blank" rel="noopener">RANSAC</a>. The best match goes to the renderer, the visibility calculator and the narration layer.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Fitter</code> (uses <code>Geom.procrustes</code>)</td></tr><tr><th>raylib calls</th><td>none (pure OCaml)</td></tr><tr><th>Adapted from</th><td>Snap-to-nearest with a running minimum inside a radius, from <a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpimage-snap.c#L592" target="_blank" rel="noopener"><code>gimpimage-snap.c snap_point</code></a>. The epsilon pivot guard in <a href="https://github.com/GNOME/gimp/blob/master/app/core/gimp-transform-utils.c#L356" target="_blank" rel="noopener"><code>gimp-transform-utils.c mod_gauss</code></a> and commit <a href="https://github.com/GNOME/gimp/commit/e7b6103cc8" target="_blank" rel="noopener"><code>e7b6103cc8</code></a>. The sign-flip fix in <a href="https://github.com/GNOME/gimp/commit/17ec3d130e" target="_blank" rel="noopener"><code>17ec3d130e</code></a> is the model for the mirror pass.</td></tr><tr><th>What changes</th><td>GIMP only solves exact transforms from 4 point pairs. Least-squares Procrustes over all corners is new code. So are the rule that each star is used once and the score penalties.</td></tr></table></div><ol><li>Apply the hypothesis transform to every corner on the tangent plane.</li><li>Snap: for each corner, scan the stars in the patch and keep the nearest unused one within radius r, tracking a running minimum distance.</li><li>Centre both point sets on their centroids c_p and c_q. If Σ|p′|² is below 1e-9, drop the hypothesis (compare with an epsilon, never with exact zero).</li><li>Procrustes: a = Σ(p′ₓq′ₓ + p′ᵧq′ᵧ), b = Σ(p′ₓq′ᵧ − p′ᵧq′ₓ). Then θ = atan2(b, a), s = √(a² + b²) / Σ|p′|², t = c_q − s·R(θ)·c_p.</li><li>Repeat snap and refit twice, because a better transform can change which star is nearest.</li><li>Score: RMS error in degrees, plus a penalty for faint stars and for bright stars inside the shape that were not used. Keep the best. If mirror images are allowed, run again with y → −y and keep the better result.</li><li>Set <code>weak = rms_deg &gt; accept_limit</code>. This makes the fitter the owner of the weak-match rule.</li></ol><pre class="sig">val procrustes : Geom.pt array -&gt; Geom.pt array -&gt; Geom.sim option   (* in Geom *)
+val rms        : Geom.sim -&gt; Geom.pt array -&gt; Geom.pt array -&gt; float
+
+type fit = { stars : int array; sim : Geom.sim; rms_deg : float; weak : bool }
+val accept_limit : float                         (* degrees; owns gap G3 *)
+val best : Catalogue.star array -&gt; Candidates.hypothesis list -&gt; fit option</pre></div>
+
+<h3>Sky renderer and morph animator</h3>
+<p>The renderer draws the region of sky around the match, usually with a <a href="https://en.wikipedia.org/wiki/Stereographic_projection" target="_blank" rel="noopener">stereographic projection</a>, which preserves the shapes of small patterns and is the traditional projection of star charts. It then animates the user's drawing sliding, turning and scaling onto the matched stars, a simple form of <a href="https://en.wikipedia.org/wiki/Morphing" target="_blank" rel="noopener">morphing</a>, and labels each star. It also assembles the shareable sky card. It receives the match from the fitter, the viewing time from the visibility calculator and the audio from the narration layer.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Sky</code> and <code>Morph</code></td></tr><tr><th>raylib calls</th><td><code>draw_circle_v</code> (stars), <code>draw_line_ex</code> (pattern lines), <code>draw_spline_catmull_rom</code> (moving stroke), <code>draw_text</code> (labels), <code>get_frame_time ()</code> (clock), <code>take_screenshot "card.png"</code> (share card)</td></tr><tr><th>Adapted from</th><td><a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolpolygon.c#L518" target="_blank" rel="noopener"><code>fit_segment</code></a> moves a whole point list with one transform. <a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpcoords-interpolate.c#L241" target="_blank" rel="noopener"><code>gimpcoords-interpolate.c catmull</code></a> draws the smooth curve. Commit <a href="https://github.com/GNOME/gimp/commit/1cae93ac42" target="_blank" rel="noopener"><code>1cae93ac42</code></a> draws a polygon through a transform with clipping.</td></tr><tr><th>What changes</th><td>GIMP applies the transform once. Doodle blends from the identity to the final transform over 1.5 s and reapplies it every frame. raylib's own <code>draw_spline_catmull_rom</code> replaces GIMP's interpolator.</td></tr></table></div><ol><li>Project the matched stars to screen with a stereographic projection centred on the match.</li><li>End transform: <code>Geom.procrustes</code> from the drawn corners to the stars' screen positions. The fitter's function is reused here.</li><li>Each frame: u ← min 1 (u + dt / 1.5), then ease with smoothstep e = u²(3 − 2u).</li><li>Blend: scale s₁ᵉ (geometric), angle e·θ₁ (θ₁ wrapped to the shorter turn), and centroid moved in a straight line from c₀ to T(c₀). Each point p is drawn at c(e) + s(e)·R(θ(e))·(p − c₀).</li><li>Draw stars with <code>draw_circle_v</code>, radius from magnitude, and draw the moving stroke with <code>draw_spline_catmull_rom</code>, which needs at least 4 points. Pass points with <code>CArray.start (CArray.of_list Vector2.t pts)</code>.</li><li>When u reaches 1, fix the labels in place. Pressing S saves the card with <code>take_screenshot</code>.</li></ol><pre class="sig">val stereographic : centre:float * float -&gt; float * float -&gt; Geom.pt
+val draw : view -&gt; Fitter.fit option -&gt; unit
+
+type morph
+val start   : drawn:Geom.pt array -&gt; target:Geom.pt array -&gt; morph
+val step    : morph -&gt; float -&gt; morph        (* dt from get_frame_time () *)
+val current : morph -&gt; Geom.pt array -&gt; Geom.pt array</pre></div>
+
+<h3>Visibility calculator</h3>
+<p>The visibility calculator converts the matched region's centre into the <a href="https://en.wikipedia.org/wiki/Horizontal_coordinate_system" target="_blank" rel="noopener">horizontal coordinate system</a> (altitude above the horizon and compass direction) for the user's location and date. It finds the region's <a href="https://en.wikipedia.org/wiki/Culmination" target="_blank" rel="noopener">culmination</a>, the moment it crosses the <a href="https://en.wikipedia.org/wiki/Meridian_(astronomy)" target="_blank" rel="noopener">meridian</a> and stands highest, and checks whether that happens in darkness. Star positions barely change, so no full <a href="https://en.wikipedia.org/wiki/Ephemeris" target="_blank" rel="noopener">ephemeris</a> is needed unless planets or the Moon are shown. It hands the best viewing time and direction to the renderer.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Visibility</code></td></tr><tr><th>raylib calls</th><td>none</td></tr><tr><th>Adapted from</th><td>No GIMP counterpart.</td></tr><tr><th>What changes</th><td>Pure float maths: sidereal time from <code>Unix.gettimeofday ()</code>, then hour angle, altitude and culmination time. Latitude and longitude come from command-line arguments, which answers gap G2.</td></tr></table></div><pre class="sig">val best_view : lat:float -&gt; lon:float -&gt; ra:float -&gt; dec:float -&gt; now:float
+  -&gt; (float * float * float)        (* unix time, altitude, azimuth *)</pre></div>
+
+<h3>Narration layer</h3>
+<p>The narration layer receives the shape's name, the matched star names and the neighbouring official constellation. A language model writes a short myth from only those facts, and a <a href="https://en.wikipedia.org/wiki/Speech_synthesis" target="_blank" rel="noopener">speech synthesis</a> service reads it aloud. The story is labelled as fiction, and no astronomical number is allowed into it except those passed in. It exists for engagement; the matching works without it.</p>
+<div class="impl"><p class="ih">In the OCaml + raylib build</p><div class="tablewrap"><table class="data"><tr><th>Module</th><td><code>Narrate</code> (optional)</td></tr><tr><th>raylib calls</th><td><code>load_sound</code> and <code>play_sound</code> for a finished audio file</td></tr><tr><th>Adapted from</th><td>No GIMP counterpart.</td></tr><tr><th>What changes</th><td>Not part of the two-hour build. If added, run it in a separate <code>Domain</code> so the raylib loop never waits on the network.</td></tr></table></div><pre class="sig">val story : shape:string -&gt; stars:string list -&gt; string option</pre></div>
+</section>
+
+<section>
+<h2 id="diagram">Architecture diagram</h2>
+<figure>
+<div class="svgwrap">
+<svg viewBox="0 0 880 530" role="img" aria-labelledby="dgt dgd">
+<title id="dgt">Doodle Constellation component diagram</title>
+<desc id="dgd">The star catalogue feeds the index builder, which supplies a triangle index to the candidate generator. A sketch flows through the simplifier and candidate generator to the fitter. The fitter sends its match to the renderer, the visibility calculator and the narration layer, which both report back to the renderer.</desc>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+
+<rect class="lane" x="10" y="30" width="610" height="90" rx="4"/>
+<text class="lanelab" x="20" y="114">OFFLINE · ONCE AT STARTUP</text>
+
+<rect class="box off" x="40" y="45" width="200" height="56" rx="4"/>
+<text class="bt" x="140" y="70" text-anchor="middle">Star catalogue store</text>
+<text class="bs" x="140" y="88" text-anchor="middle">positions, magnitudes, names</text>
+
+<rect class="box off" x="405" y="45" width="200" height="56" rx="4"/>
+<text class="bt" x="505" y="70" text-anchor="middle">Invariant index builder</text>
+<text class="bs" x="505" y="88" text-anchor="middle">triangle shape keys</text>
+
+<rect class="box" x="20" y="200" width="140" height="56" rx="4"/>
+<text class="bt" x="90" y="225" text-anchor="middle">Sketch capture</text>
+<text class="bs" x="90" y="243" text-anchor="middle">drawing surface</text>
+
+<rect class="box" x="220" y="200" width="150" height="56" rx="4"/>
+<text class="bt" x="295" y="225" text-anchor="middle">Stroke simplifier</text>
+<text class="bs" x="295" y="243" text-anchor="middle">corner extraction</text>
+
+<rect class="box" x="430" y="200" width="150" height="56" rx="4"/>
+<text class="bt" x="505" y="225" text-anchor="middle">Candidate generator</text>
+<text class="bs" x="505" y="243" text-anchor="middle">hash lookups</text>
+
+<rect class="box" x="640" y="200" width="200" height="56" rx="4"/>
+<text class="bt" x="740" y="225" text-anchor="middle">Similarity fitter + scorer</text>
+<text class="bs" x="740" y="243" text-anchor="middle">fit, score, pick best</text>
+
+<rect class="box" x="40" y="400" width="220" height="56" rx="4"/>
+<text class="bt" x="150" y="425" text-anchor="middle">Sky renderer + morph</text>
+<text class="bs" x="150" y="443" text-anchor="middle">sky view, animation, share card</text>
+
+<rect class="box" x="380" y="400" width="200" height="56" rx="4"/>
+<text class="bt" x="480" y="425" text-anchor="middle">Visibility calculator</text>
+<text class="bs" x="480" y="443" text-anchor="middle">altitude, culmination</text>
+
+<rect class="box" x="660" y="400" width="200" height="56" rx="4"/>
+<text class="bt" x="760" y="425" text-anchor="middle">Narration layer</text>
+<text class="bs" x="760" y="443" text-anchor="middle">myth writer + voice</text>
+
+<path class="ar" marker-end="url(#ah)" d="M240,73 H403"/>
+<text class="al" x="322" y="66" text-anchor="middle">star positions</text>
+
+<path class="ar" marker-end="url(#ah)" d="M140,45 V16 H740 V198"/>
+<text class="al" x="680" y="12" text-anchor="middle">positions, magnitudes</text>
+
+<path class="ar" marker-end="url(#ah)" d="M505,101 V198"/>
+<text class="al" x="512" y="158">triangle index</text>
+
+<path class="ar" marker-end="url(#ah)" d="M160,228 H218"/>
+<text class="al" x="189" y="219" text-anchor="middle">stroke</text>
+
+<path class="ar" marker-end="url(#ah)" d="M370,228 H428"/>
+<text class="al" x="399" y="219" text-anchor="middle">corners</text>
+
+<path class="ar" marker-end="url(#ah)" d="M580,228 H638"/>
+<text class="al" x="609" y="219" text-anchor="middle">hypotheses</text>
+
+<path class="ar" marker-end="url(#ah)" d="M680,256 V320 H150 V398"/>
+<text class="al" x="410" y="313" text-anchor="middle">best match: star IDs, transform, fit error</text>
+
+<path class="ar" marker-end="url(#ah)" d="M720,256 V360 H480 V398"/>
+<text class="al" x="600" y="353" text-anchor="middle">matched region</text>
+
+<path class="ar" marker-end="url(#ah)" d="M800,256 V398"/>
+<text class="al" x="808" y="334">star names</text>
+
+<path class="ar" marker-end="url(#ah)" d="M380,428 H262"/>
+<text class="al" x="321" y="420" text-anchor="middle">best time</text>
+
+<path class="ar" marker-end="url(#ah)" d="M760,456 V500 H150 V458"/>
+<text class="al" x="455" y="494" text-anchor="middle">story audio</text>
+</svg>
+</div>
+<figcaption>Components of a Doodle Constellation system. The dashed lane runs once at startup; everything below it runs for each drawing.</figcaption>
+<details>
+<summary>Diagram source (PlantUML)</summary>
+<pre>@startuml
+skinparam componentStyle rectangle
+package "Offline (once at startup)" {
+  [Star catalogue store] as CAT
+  [Invariant index builder] as IDX
+}
+[Sketch capture] as SKT
+[Stroke simplifier] as SMP
+[Candidate generator] as CND
+[Similarity fitter + scorer] as FIT
+[Sky renderer + morph] as REN
+[Visibility calculator] as VIS
+[Narration layer] as NAR
+
+CAT --&gt; IDX : star positions
+CAT --&gt; FIT : positions, magnitudes
+IDX --&gt; CND : triangle index
+SKT --&gt; SMP : stroke
+SMP --&gt; CND : corners
+CND --&gt; FIT : hypotheses
+FIT --&gt; REN : best match
+FIT --&gt; VIS : matched region
+FIT --&gt; NAR : star names
+VIS --&gt; REN : best time
+NAR --&gt; REN : story audio
+@enduml</pre>
+</details>
+</figure>
+</section>
+
+<section class="prose">
+<h2 id="operation">Operation</h2>
+<h3>Matching a drawing</h3>
+<p>A user draws a lightning bolt. Sketch capture records about 200 points; the simplifier reduces them to six corners. The candidate generator forms the triangles among those corners and looks up each one's shape key, collecting a few thousand hypotheses. The fitter projects all six corners for each hypothesis, snaps them to the nearest bright stars and keeps the tightest fit, for example six stars near Orion with an error under two degrees. The renderer morphs the bolt onto those stars while the visibility calculator reports that the region is highest at about 2:40 a.m., and the narration layer begins its story.</p>
+<h3>Sanity check with a known pattern</h3>
+<p>Drawing the seven stars of the <a href="https://en.wikipedia.org/wiki/Big_Dipper" target="_blank" rel="noopener">Big Dipper</a> should return the Big Dipper as the top match with a very small error. Because the real pattern is in the catalogue, this test checks the whole online path at once and is the usual first test of a new build.</p>
+<h3>Failure: a shape with no good match</h3>
+<p>A drawing with long, evenly spaced corners may find no star group that fits well, because bright stars are not spread evenly over the sky. The fitter still returns its best hypothesis, but its error exceeds the acceptance threshold. The system then reports the fit as weak, shows the best attempt dimmed, and suggests fewer corners or a tighter shape. A second failure occurs when a shape is too simple, such as three nearly collinear corners: the simplifier rejects it before any lookup, because a line matches countless star groups equally well.</p>
+</section>
+
+<section class="prose">
+<h2 id="properties">Properties</h2>
+<ul>
+  <li><b>Similarity invariance.</b> A match does not depend on where, how large, or at what angle the shape was drawn. The invariant index builder and candidate generator provide it, through shape keys built from ratios and angles; see <a href="https://en.wikipedia.org/wiki/Similarity_(geometry)" target="_blank" rel="noopener">similarity</a>.</li>
+  <li><b>Interactive speed.</b> Results arrive in a few seconds because the index replaces exhaustive comparison with lookups in a <a href="https://en.wikipedia.org/wiki/Hash_table" target="_blank" rel="noopener">hash table</a>, which take roughly constant time per key.</li>
+  <li><b>Robustness to a shaky hand.</b> Bin tolerance in the candidate generator and least-squares refinement in the fitter absorb small drawing errors. Outlier corners are handled by the hypothesis-and-verify approach of <a href="https://en.wikipedia.org/wiki/Random_sample_consensus" target="_blank" rel="noopener">RANSAC</a>.</li>
+  <li><b>Findability.</b> Every matched star is bright enough to see without optical aid, enforced by the catalogue cut and the fitter's <a href="https://en.wikipedia.org/wiki/Apparent_magnitude" target="_blank" rel="noopener">magnitude</a> penalty, so the result can be found on a real night.</li>
+  <li><b>Measurable fit quality.</b> The fitter reports a <a href="https://en.wikipedia.org/wiki/Root_mean_square_deviation" target="_blank" rel="noopener">root-mean-square deviation</a> in degrees, so users can see how close the match is instead of trusting a pleasing picture.</li>
+  <li><b>Honest separation of fact and fiction.</b> Star positions, names and times come from data; only the myth is generated, and it is labelled as such.</li>
+</ul>
+</section>
+
+<section class="prose">
+<h2 id="tradeoffs">Design trade-offs</h2>
+<p><b>Catalogue depth.</b> Including fainter stars makes almost any shape matchable but produces matches no one can see from a city. Cutting at about magnitude 4 to 5 keeps matches findable at the cost of rejecting more drawings.</p>
+<p><b>Shape key size.</b> Triangles are cheap to index and match from any three corners, but they are not very distinctive, so they return many false hypotheses. Four-star groups, the "quads" used by Astrometry.net, are far more distinctive but make the index much larger and need four well-placed corners.</p>
+<p><b>Bin width.</b> Wide bins tolerate sloppy drawing but flood the fitter with candidates; narrow bins are fast but miss imperfect drawings. A common compromise is narrow bins with a one-bin neighbourhood search.</p>
+<p><b>Scoring.</b> Pure <a href="https://en.wikipedia.org/wiki/Root_mean_square_deviation" target="_blank" rel="noopener">RMS error</a> favours tiny, tight patterns of faint stars. Adding brightness and "unused bright star inside the shape" penalties makes results look right to a person, at the cost of extra tuning.</p>
+<p><b>Projection.</b> Matching on a <a href="https://en.wikipedia.org/wiki/Gnomonic_projection" target="_blank" rel="noopener">gnomonic</a> tangent plane keeps the geometry exact for small regions but distorts large ones; displaying with a <a href="https://en.wikipedia.org/wiki/Stereographic_projection" target="_blank" rel="noopener">stereographic</a> view keeps shapes recognisable. Using different projections for matching and display is normal.</p>
+<p><b>Where matching runs.</b> Running on a server keeps the index off the phone and allows heavier scoring. Running in the browser removes network delay and works offline, but the index must be small enough to download. The OCaml build takes neither route: everything runs in one desktop process, the raylib loop calls the matcher as an ordinary function, and the index is built in memory at startup.</p>
+</section>
+
+<section class="prose" id="lineage-sec">
+<h2 id="lineage">Algorithm lineage</h2>
+<p>Five of the nine components reuse techniques found in the source of <a href="https://en.wikipedia.org/wiki/GIMP" target="_blank" rel="noopener">GIMP</a>, the open-source image editor. GIMP solves related problems: it cleans up pen input, reduces outlines to fewer points, and moves shapes so that chosen points land on chosen targets. The table names the file and the commits each technique comes from and what changes for Doodle Constellation. The GIMP links point to its current source as of November 2026.</p>
+<div class="tablewrap"><table class="data"><tr><th>Component</th><th>OCaml module</th><th>Technique</th><th>GIMP source</th><th>Change for Doodle</th></tr><tr><td>Sketch capture</td><td><code>Capture</code></td><td>Movement filter and velocity-weighted Gaussian smoothing</td><td><a href="https://github.com/GNOME/gimp/blob/master/app/display/gimpmotionbuffer.c#L253" target="_blank" rel="noopener"><code>gimpmotionbuffer.c</code></a>, <a href="https://github.com/GNOME/gimp/blob/master/app/paint/gimppaintcore.c#L1664" target="_blank" rel="noopener"><code>gimppaintcore.c</code></a>; <a href="https://github.com/GNOME/gimp/commit/e09520fb08" target="_blank" rel="noopener"><code>e09520fb08</code></a>, <a href="https://github.com/GNOME/gimp/commit/082aa272a4" target="_blank" rel="noopener"><code>082aa272a4</code></a></td><td>2 px filter; weight by distance, since raylib gives one sample per frame</td></tr><tr><td>Stroke simplifier</td><td><code>Simplify</code></td><td>Recursive subdivision with a cross-product distance test</td><td><a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpboundary.c#L944" target="_blank" rel="noopener"><code>gimpboundary.c</code></a></td><td>Split at the farthest point (true RDP); ε relative to drawing size; retry to 5–9 corners</td></tr><tr><td>Candidate generator</td><td><code>Candidates</code>, Geom.sim_of_pair</td><td>Similarity transform from one point pair</td><td><a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolhandlegrid.c#L773" target="_blank" rel="noopener"><code>gimptoolhandlegrid.c</code></a>, <a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolpolygon.c#L518" target="_blank" rel="noopener"><code>gimptoolpolygon.c</code></a>; <a href="https://github.com/GNOME/gimp/commit/2989bad35a" target="_blank" rel="noopener"><code>2989bad35a</code></a></td><td>Returns a record; pair is the triangle's longest side</td></tr><tr><td>Similarity fitter</td><td><code>Fitter</code>, Geom.procrustes</td><td>Nearest snap in a radius; epsilon guard; sign-flip handling</td><td><a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpimage-snap.c#L592" target="_blank" rel="noopener"><code>gimpimage-snap.c</code></a>, <a href="https://github.com/GNOME/gimp/blob/master/app/core/gimp-transform-utils.c#L356" target="_blank" rel="noopener"><code>gimp-transform-utils.c</code></a>; <a href="https://github.com/GNOME/gimp/commit/e7b6103cc8" target="_blank" rel="noopener"><code>e7b6103cc8</code></a>, <a href="https://github.com/GNOME/gimp/commit/17ec3d130e" target="_blank" rel="noopener"><code>17ec3d130e</code></a></td><td>Least-squares Procrustes is new; each star used once; mirror pass</td></tr><tr><td>Sky renderer and morph</td><td><code>Sky</code>, Morph</td><td>Move a point list with one transform; Catmull-Rom curve; draw through a transform</td><td><a href="https://github.com/GNOME/gimp/blob/master/app/display/gimptoolpolygon.c#L518" target="_blank" rel="noopener"><code>gimptoolpolygon.c</code></a>, <a href="https://github.com/GNOME/gimp/blob/master/app/core/gimpcoords-interpolate.c#L241" target="_blank" rel="noopener"><code>gimpcoords-interpolate.c</code></a>; <a href="https://github.com/GNOME/gimp/commit/1cae93ac42" target="_blank" rel="noopener"><code>1cae93ac42</code></a></td><td>Blend the transform over time; raylib's draw_spline_catmull_rom draws the curve</td></tr><tr><td>Catalogue, index, visibility, narration</td><td><code>Catalogue</code>, Index, Visibility, Narrate</td><td>None in GIMP</td><td>None</td><td>Written from the design and Astrometry.net</td></tr></table></div>
+<p>Three points matter for the OCaml build. First, GIMP's simplifier is not exact <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm" target="_blank" rel="noopener">Ramer–Douglas–Peucker</a>: it splits at the midpoint, so only its distance test and recursion are reused. Second, GIMP has no least-squares fit, so <code>Geom.procrustes</code> is written from the standard closed form. Third, GIMP's application code is licensed under the GPL version 3, so the OCaml modules reimplement the techniques instead of translating the C code line by line.</p>
+<p>All matching modules work on a plain record, <code>{x; y}</code>, and never on raylib's <code>Vector2.t</code>. Only <code>main.ml</code> and <code>Sky</code> call raylib. This keeps the algorithms testable with <code>dune test</code> without opening a window.</p>
+</section>
+
+<section class="prose">
+<h2 id="variants">Variants</h2>
+<p><b>Photograph plate solving.</b> Systems such as Astrometry.net take a photograph instead of a drawing, detect the stars in it, and identify exactly which part of the sky it shows. The architecture is the same, but the input points come from star detection, and the catalogue is much deeper.</p>
+<p><b>Spacecraft star identification.</b> A spacecraft star tracker photographs the sky and matches star patterns against an onboard catalogue to work out which way the spacecraft is pointing. It is the same lookup problem under tight memory and time limits.</p>
+<p><b>General point-set registration.</b> Without the sky, the same pipeline aligns any two point clouds, as in <a href="https://en.wikipedia.org/wiki/Point-set_registration" target="_blank" rel="noopener">point-set registration</a>, which is used in robotics, medical imaging and 3D scanning.</p>
+<p><b>Constellation teaching tools.</b> <a href="https://en.wikipedia.org/wiki/Planetarium_software" target="_blank" rel="noopener">Planetarium software</a> draws the traditional <a href="https://en.wikipedia.org/wiki/Constellation" target="_blank" rel="noopener">constellations</a> and asterisms. A Doodle Constellation system reverses that relationship by letting the user supply the pattern.</p>
+</section>
+
+<section class="prose">
+<h2 id="history">History</h2>
+<p>The 88 modern constellations were adopted by the International Astronomical Union in 1922, with fixed boundaries following in 1928. Geometric hashing came from computer vision research on object recognition in the late 1980s, and was later reused in other fields. Its best-known astronomical use, blind identification of sky photographs, was described in the Astrometry.net paper published in The Astronomical Journal in 2010. Doodle Constellation applies the same index-and-verify design to freehand drawings, playing on the human tendency, known as <a href="https://en.wikipedia.org/wiki/Pareidolia" target="_blank" rel="noopener">pareidolia</a>, to see familiar shapes in random patterns.</p>
+</section>
+
+<section class="prose">
+<h2 id="seealso">See also</h2>
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/Asterism_(astronomy)" target="_blank" rel="noopener">Asterism (astronomy)</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/IAU_designated_constellations" target="_blank" rel="noopener">IAU designated constellations</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Geometric_hashing" target="_blank" rel="noopener">Geometric hashing</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Procrustes_analysis" target="_blank" rel="noopener">Procrustes analysis</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Point-set_registration" target="_blank" rel="noopener">Point-set registration</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Random_sample_consensus" target="_blank" rel="noopener">Random sample consensus</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Celestial_coordinate_system" target="_blank" rel="noopener">Celestial coordinate system</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Observational_astronomy" target="_blank" rel="noopener">Observational astronomy</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Pareidolia" target="_blank" rel="noopener">Pareidolia</a></li>
+</ul>
+</section>
+
+<section class="build prose">
+<h2 id="building">Building one</h2>
+<p><span class="tier">Minimal version (about two hours), in OCaml and raylib.</span> One dune project with a pure library and a small raylib executable. Pre-built: <code>Capture</code>, <code>Catalogue</code>, <code>Index</code>, <code>Candidates</code> and the flat <code>Sky</code> plot. The small core to write by hand is the three adapted algorithms, <code>Simplify.corners</code>, <code>Geom.sim_of_pair</code> and <code>Geom.procrustes</code>, plus <code>Fitter.best</code> that ties them together. It can match 5 to 7 corner drawings and pass the Big Dipper test. It cannot show viewing times, animate, narrate, or handle shapes that need faint stars.</p>
+<pre class="sig">doodle/
+  dune-project
+  src/dune           (library (name doodle) (libraries unix))   no raylib here
+  src/geom.ml        pt, sim, sim_of_pair, apply, procrustes, rms, gnomonic
+  src/capture.ml     movement filter + Gaussian smoothing
+  src/simplify.ml    RDP corners with retry, Too_simple / Too_complex
+  src/catalogue.ml   CSV loader, magnitude cut
+  src/index.ml       triangle keys in a Hashtbl
+  src/candidates.ml  index lookups + sim_of_pair
+  src/fitter.ml      snap, Procrustes refit, score, accept_limit
+  src/morph.ml       transform blending over time (hackathon)
+  src/visibility.ml  sidereal time, altitude, culmination (hackathon)
+  bin/dune           (executable (name main) (libraries doodle raylib))
+  bin/sky.ml         projection to screen, draw_circle_v, draw_line_ex, draw_text
+  bin/main.ml        init_window, set_target_fps 60, frame loop
+  data/bright_stars.csv
+  test/test_geom.ml  Big Dipper, rotation and scale invariance</pre>
+<p><span class="tier">Hackathon version (a day).</span> Adds <code>Morph</code> and the stereographic <code>Sky</code> renderer with the morph animation, the visibility calculator for the user's location, the narration layer, fit-quality display, and the share card saved with <code>take_screenshot</code>. Narration runs in its own <code>Domain</code> so the frame loop never waits on the network.</p>
+<p><span class="tier">Product version.</span> Adds four-star keys for better precision, an in-browser index for offline use, saved constellations, multiplayer "draw one for a friend", and pointing hardware or a telescope mount that aims at the result.</p>
+<p><b>Questions to answer before building</b></p>
+<ul>
+  <li>What brightness cut makes matches findable from a typical city sky?</li>
+  <li>Triangles or four-star groups, and how far apart may stars in one group be?</li>
+  <li>How wide is a bin, and how many neighbouring bins does a lookup check?</li>
+  <li>What score separates a good match from a weak one, and what does the user see for each?</li>
+  <li>Does the drawing's direction matter, and are mirror images allowed?</li>
+  <li>How long may the index take to build at startup before the window feels slow, and should building move to a separate <code>Domain</code>?</li>
+  <li>Which projection is used for matching, and which for display?</li>
+  <li>Which facts may the story mention, and how is it marked as fiction?</li>
+</ul>
+</section>
+</main>
+
+</body></html>

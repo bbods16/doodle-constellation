@@ -1,0 +1,20 @@
+data: 64000 train, 8000 val, 110s
+parameters: 103432
+epoch  1  loss 1.4252  val acc 0.8440  162s
+epoch  2  loss 0.4421  val acc 0.9709  216s
+epoch  3  loss 0.3396  val acc 0.9803  271s
+epoch  4  loss 0.3200  val acc 0.9849  308s
+epoch  5  loss 0.3083  val acc 0.9821  341s
+epoch  6  loss 0.3017  val acc 0.9868  373s
+epoch  7  loss 0.2986  val acc 0.9876  403s
+epoch  8  loss 0.2947  val acc 0.9909  439s
+epoch  9  loss 0.2918  val acc 0.9875  497s
+epoch 10  loss 0.2899  val acc 0.9879  534s
+epoch 11  loss 0.2872  val acc 0.9920  576s
+epoch 12  loss 0.2832  val acc 0.9914  617s
+epoch 13  loss 0.2816  val acc 0.9921  669s
+epoch 14  loss 0.2798  val acc 0.9919  701s
+epoch 15  loss 0.2773  val acc 0.9942  726s
+epoch 16  loss 0.2748  val acc 0.9939  754s
+epoch 17  loss 0.2730  val acc 0.9946  781s
+epoch 18  loss 0.2720  val acc 0.9946  818s

@@ -1,0 +1,13 @@
+# OCaml / dune
+_build/
+*.install
+
+# Lean / Lake (Mathlib cache is several GB; `lake exe cache get` restores it)
+proofs/.lake/
+
+# Python
+__pycache__/
+*.pyc
+
+# App output
+doodle_card.png

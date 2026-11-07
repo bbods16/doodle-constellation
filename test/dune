@@ -1,0 +1,9 @@
+(test
+ (name test_hack)
+ (libraries hack ounit2)
+ (flags
+  (:standard -open Hack))
+ (deps
+  (file ../data/stars.csv)
+  (file ../data/engine_weights.txt)
+  (file ../data/engine_testvec.txt)))

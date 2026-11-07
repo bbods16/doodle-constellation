@@ -1,0 +1,12 @@
+; The window app needs raylib (and ctypes) from opam:  opam install raylib
+; It is optional, so `dune build` and `dune test` still work for the pure
+; library when raylib is missing (see the root dune file).
+(executable
+ (public_name hack)
+ (name main)
+ (modules main sky)
+ (optional)
+ (libraries hack raylib ctypes unix)
+ (flags
+  (:standard -open Hack)))
+
