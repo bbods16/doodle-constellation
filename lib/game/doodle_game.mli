@@ -19,6 +19,14 @@
     {- {!Morph}      — the animation that slides the drawing onto the stars.}
     {- {!Narrate}    — optional invented story, fetched in the background.}}
 
+    {2 PLANNED: collect mode (interfaces only, stubs; see docs/COLLECT_PLAN.md)}
+    {ul
+    {- {!Accuracy}   — drawing vs figure → "87.3%", tiers, colour, pass mark.}
+    {- {!Collection} — collected figures and best score each; saved to disk.}
+    {- {!Roast}      — strikes, insults under 50%, final diss on strike 5.}
+    {- {!Judge}      — one score → one verdict (collected, record, insult, game over).}
+    {- {!Collect}    — the mode's state machine: prompt, draw, verdict, quit.}}
+
     {2 Key types}
     {ul
     {- [Scene.ctx]        — resources shared by every screen (abstract).}
@@ -35,3 +43,8 @@ module Game = Game
 module Projection = Projection
 module Morph = Morph
 module Narrate = Narrate
+module Collect = Collect
+module Judge = Judge
+module Roast = Roast
+module Collection = Collection
+module Accuracy = Accuracy

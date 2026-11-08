@@ -10,6 +10,8 @@
     {- {!Catalogue}  — loads [data/stars.csv]; one [star] per row
                        (id, name, ra, dec, magnitude, constellation).}
     {- {!Data_dir}   — finds data/stars.csv wherever the app is started.}
+    {- {!Asterism}   — PLANNED: the collectible constellation figures
+                       (data/asterisms.csv).}
     {- {!Visibility} — sidereal time, altitude/azimuth, Sun position,
                        best viewing time, compass labels.}}
 
@@ -20,3 +22,4 @@
 module Catalogue = Catalogue
 module Visibility = Visibility
 module Data_dir = Data_dir
+module Asterism = Asterism

@@ -3,3 +3,4 @@
 module Catalogue = Catalogue
 module Visibility = Visibility
 module Data_dir = Data_dir
+module Asterism = Asterism
