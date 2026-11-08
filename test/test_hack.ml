@@ -353,8 +353,179 @@ let engine_tests =
            | (name, _) :: _ -> assert_equal ~printer:(fun s -> s) Engine.none_label name
            | [] -> assert_failure "no classes") ]
 
+(* Two throwaway scenes for testing the router without a window. [draw]
+   records the state it was given so tests can observe it. *)
+let drawn_a = ref (-1)
+
+module Scene_a = struct
+  type t = int
+
+  let name = "a"
+  let init (_ : Scene.ctx) = 0
+
+  let update (_ : Scene.ctx) inp n =
+    if Scene.pressed inp Scene.Enter then Scene.Goto "b"
+    else if Scene.pressed inp (Scene.Letter 'q') then Scene.Quit
+    else if Scene.pressed inp (Scene.Letter 's') then Scene.Continue (n + 1, [ Scene.Screenshot "x.png" ])
+    else Scene.Continue (n + 1, [])
+
+  let draw (_ : Scene.ctx) n = drawn_a := n
+end
+
+module Scene_b = struct
+  type t = unit
+
+  let name = "b"
+  let init (_ : Scene.ctx) = ()
+
+  let update (_ : Scene.ctx) inp () =
+    if Scene.pressed inp Scene.Tab then Scene.Goto "missing"
+    else if Scene.pressed inp Scene.Escape then Scene.Goto "a"
+    else Scene.Continue ((), [])
+
+  let draw (_ : Scene.ctx) () = ()
+end
+
+let scene_tests =
+  let ctx =
+    lazy
+      (Scene.make_ctx ~stars:(Lazy.force catalogue) ~index:(Lazy.force index) ~lat:0. ~lon:0. ())
+  in
+  let reg = lazy (Scene.registry [ (module Scene_a); (module Scene_b) ]) in
+  let inp keys = { (Scene.idle ~width:800 ~height:600) with keys } in
+  let next r = function
+    | Scene.Next (r', _) -> r'
+    | Scene.Stopped -> assert_failure ("unexpected stop in " ^ Scene.current_name r)
+  in
+  "scene"
+  >::: [ ("registry" >:: fun _ ->
+           assert_equal [ "a"; "b" ] (Scene.names (Lazy.force reg));
+           assert_raises (Invalid_argument "Scene.registry: duplicate scene name a") (fun () ->
+               Scene.registry [ (module Scene_a); (module Scene_a) ]);
+           assert_raises (Invalid_argument "Scene.registry: no scenes") (fun () -> Scene.registry []));
+         ("launch" >:: fun _ ->
+           let ctx = Lazy.force ctx and reg = Lazy.force reg in
+           assert_equal "b" (Scene.current_name (Scene.launch reg ctx "b"));
+           assert_raises (Invalid_argument "Scene.launch: unknown scene \"zzz\" (known: a, b)")
+             (fun () -> Scene.launch reg ctx "zzz"));
+         ("continue_keeps_state" >:: fun _ ->
+           let ctx = Lazy.force ctx and reg = Lazy.force reg in
+           let r = Scene.launch reg ctx "a" in
+           let r = next r (Scene.step reg ctx (inp []) r) in
+           let r = next r (Scene.step reg ctx (inp []) r) in
+           assert_equal "a" (Scene.current_name r);
+           Scene.draw ctx r;
+           assert_equal 2 !drawn_a);
+         ("effects" >:: fun _ ->
+           let ctx = Lazy.force ctx and reg = Lazy.force reg in
+           match Scene.step reg ctx (inp [ Scene.Letter 's' ]) (Scene.launch reg ctx "a") with
+           | Scene.Next (_, effects) -> assert_equal [ Scene.Screenshot "x.png" ] effects
+           | Scene.Stopped -> assert_failure "stopped");
+         ("goto_switches_with_fresh_state" >:: fun _ ->
+           let ctx = Lazy.force ctx and reg = Lazy.force reg in
+           let r = Scene.launch reg ctx "a" in
+           let r = next r (Scene.step reg ctx (inp []) r) in
+           let r = next r (Scene.step reg ctx (inp [ Scene.Enter ]) r) in
+           assert_equal "b" (Scene.current_name r);
+           let r = next r (Scene.step reg ctx (inp [ Scene.Escape ]) r) in
+           assert_equal "a" (Scene.current_name r);
+           Scene.draw ctx r;
+           assert_equal 0 !drawn_a);
+         ("quit_and_bad_goto" >:: fun _ ->
+           let ctx = Lazy.force ctx and reg = Lazy.force reg in
+           assert_equal Scene.Stopped
+             (match Scene.step reg ctx (inp [ Scene.Letter 'q' ]) (Scene.launch reg ctx "a") with
+             | Scene.Stopped -> Scene.Stopped
+             | Scene.Next (_, e) -> Scene.Next (Scene.launch reg ctx "a", e));
+           assert_raises (Invalid_argument "Scene.launch: unknown scene \"missing\" (known: a, b)")
+             (fun () -> Scene.step reg ctx (inp [ Scene.Tab ]) (Scene.launch reg ctx "b")));
+         ("pressed" >:: fun _ ->
+           assert_bool "enter" (Scene.pressed (inp [ Scene.Enter ]) Scene.Enter);
+           assert_bool "not space" (not (Scene.pressed (inp [ Scene.Enter ]) Scene.Space))) ]
+
+let controls_tests =
+  let base = Scene.idle ~width:800 ~height:600 in
+  "controls"
+  >::: [ ("pen" >:: fun _ ->
+           assert_equal [ Controls.Pen_down (p 3. 4.) ]
+             (Controls.read { base with mouse_down = true; mouse = p 3. 4. });
+           assert_equal [ Controls.Pen_up ] (Controls.read { base with mouse_released = true });
+           assert_equal [] (Controls.read base));
+         ("keys" >:: fun _ ->
+           assert_equal [ Controls.Clear; Controls.Open_menu ]
+             (Controls.read { base with keys = [ Scene.Letter 'm'; Scene.Letter 'c'; Scene.Enter ] });
+           assert_equal [ Controls.Save_card ] (Controls.read { base with keys = [ Scene.Letter 's' ] })) ]
+
+let game_tests =
+  let ctx engine =
+    Scene.make_ctx ~stars:(Lazy.force catalogue) ~index:(Lazy.force index) ?engine ~lat:0.75 ~lon:(-1.38) ()
+  in
+  let screen = { Game.width = 1280; height = 800; now = 1782000000. } in
+  (* feed a polyline to the game as mouse samples, then release *)
+  let draw_and_release c verts g =
+    let g = Array.fold_left (fun g q -> Game.apply c screen g (Controls.Pen_down q)) g
+        (sample_polyline 3. verts) in
+    Game.apply c screen g Controls.Pen_up
+  in
+  "game"
+  >::: [ ("big_dipper_flow" >:: fun _ ->
+           let c = ctx (Some (Lazy.force engine)) in
+           let ids, verts = dipper_screen () in
+           let g = draw_and_release c verts (Game.init ()) in
+           (match Game.stage g with
+           | Game.Morphing _ -> ()
+           | Game.Hint h -> assert_failure ("refused: " ^ h)
+           | _ -> assert_failure "expected Morphing");
+           (match Game.current_fit g with
+           | Some f ->
+               let show a =
+                 String.concat ","
+                   (Array.to_list (Array.map (fun i -> (Lazy.force catalogue).(i).Catalogue.name) a))
+               in
+               (* Smoothing + simplification may drop Alioth, a near-straight
+                  bend in the handle; every star matched must still be a
+                  Dipper star, in drawing order. *)
+               let positions = Array.map (fun s ->
+                   let rec find k = if k = Array.length ids then -1
+                     else if ids.(k) = s then k else find (k + 1) in find 0) f.Fitter.stars in
+               assert_bool ("only Dipper stars: " ^ show f.Fitter.stars)
+                 (Array.for_all (fun k -> k >= 0) positions);
+               assert_bool ("in drawing order: " ^ show f.Fitter.stars)
+                 (Array.for_all Fun.id
+                    (Array.init (Array.length positions - 1) (fun k -> positions.(k) < positions.(k + 1))));
+               assert_bool "at least 5 stars" (Array.length positions >= 5)
+           | None -> assert_failure "no fit");
+           assert_bool "engine guessed" (Game.guess g <> None);
+           assert_bool "view set" (Game.view g <> None);
+           assert_bool "best view set" (Game.best_view g <> None);
+           let g = Game.tick 10. g in
+           (match Game.stage g with Game.Showing _ -> () | _ -> assert_failure "expected Showing");
+           assert_bool "stroke shown" (Array.length (Game.visible_stroke g) > 0);
+           (* drawing again starts a fresh stroke *)
+           let g = Game.apply c screen g (Controls.Pen_down (p 1. 1.)) in
+           assert_equal 1 (Game.stroke_length g);
+           assert_equal None (Game.current_fit g));
+         ("refused_line" >:: fun _ ->
+           let c = ctx None in
+           let g = draw_and_release c [| p 0. 0.; p 400. 20. |] (Game.init ()) in
+           (match Game.stage g with
+           | Game.Hint h -> assert_equal (Game.hint_of `Too_simple) h
+           | _ -> assert_failure "expected Hint");
+           assert_equal None (Game.guess g));
+         ("clear_and_noops" >:: fun _ ->
+           let c = ctx None in
+           let g = Game.apply c screen (Game.init ()) (Controls.Pen_down (p 5. 5.)) in
+           assert_equal 0 (Game.stroke_length (Game.apply c screen g Controls.Clear));
+           assert_bool "pen_up without stroke" (Game.stage (Game.pen_up c screen (Game.init ())) = Game.Drawing);
+           assert_equal 1 (Game.stroke_length (Game.apply c screen g Controls.Save_card));
+           assert_equal 1 (Game.stroke_length (Game.ask_story c g)));
+         ("mirror" >:: fun _ ->
+           let r = Game.mirror_about_centroid [| p 0. 0.; p 0. 2. |] [| p 0. 0. |] in
+           assert_pt "mirrored" (p 0. 2.) r.(0)) ]
+
 let () =
   run_test_tt_main
     ("doodle"
     >::: [ geom_tests; simplify_tests; capture_tests; catalogue_tests; index_tests;
-           matching_tests; visibility_tests; morph_tests; narrate_tests; engine_tests ])
+           matching_tests; visibility_tests; morph_tests; narrate_tests; engine_tests;
+           scene_tests; controls_tests; game_tests ])

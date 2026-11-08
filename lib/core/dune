@@ -1,0 +1,4 @@
+; Layer 1 - core maths. Depends on nothing but the standard library.
+(library
+ (name doodle_core)
+ (public_name hack.core))

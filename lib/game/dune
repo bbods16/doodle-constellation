@@ -1,0 +1,7 @@
+; Layer 4 - game. May use: core, sky, matching, recognition.
+(library
+ (name doodle_game)
+ (public_name hack.game)
+ (libraries hack.core hack.sky hack.matching hack.recognition)
+ (flags
+  (:standard -open Doodle_core -open Doodle_sky -open Doodle_matching -open Doodle_recognition)))

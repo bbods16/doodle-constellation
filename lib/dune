@@ -1,4 +1,0 @@
-; Pure OCaml matching library (no raylib), testable with `dune test`.
-(library
- (name hack)
- (public_name hack))

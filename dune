@@ -1,7 +1,7 @@
-; `dune build` = library, tests and @install. The raylib app in bin/ is an
-; optional executable: @install builds it only when raylib and ctypes are
-; installed, so a machine without raylib can still build and test the
-; matching library.
+; `dune build` = the library layers, tests and @install. The raylib app in
+; bin/ is an optional executable: @install builds it only when raylib and
+; ctypes are installed, so a machine without raylib can still build and
+; test every library layer.
 (rule
  (alias default)
  (deps

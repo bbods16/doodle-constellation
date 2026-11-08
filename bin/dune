@@ -1,12 +1,14 @@
-; The window app needs raylib (and ctypes) from opam:  opam install raylib
-; It is optional, so `dune build` and `dune test` still work for the pure
-; library when raylib is missing (see the root dune file).
+; Layer 5 - the app (raylib front end). May use every library layer.
+; Needs raylib (and ctypes) from opam:  opam install raylib
+; It is optional, so `dune build` and `dune test` still work for the
+; library layers when raylib is missing (see the root dune file).
+;
+; Every .ml file in this folder is part of the app, so a new screen
+; module only needs to be created here and listed in main.ml.
 (executable
  (public_name hack)
  (name main)
- (modules main sky)
  (optional)
- (libraries hack raylib ctypes unix)
+ (libraries hack.core hack.sky hack.matching hack.recognition hack.game raylib ctypes unix)
  (flags
-  (:standard -open Hack)))
-
+  (:standard -open Doodle_core -open Doodle_sky -open Doodle_matching -open Doodle_recognition -open Doodle_game)))

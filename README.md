@@ -21,10 +21,17 @@ Mathlib** (`proofs/`) and explained in prose in
 
 ## Layout
 
+**New to the code? Read [ARCHITECTURE.md](ARCHITECTURE.md) first.** The
+library is split into layers, each with one interface file.
+
 | Path | What it is |
 | --- | --- |
-| `lib/` | Pure OCaml library: geometry, stroke capture, simplifier, catalogue, triangle index, candidates, fitter, visibility, morph, narration, recognition engine |
-| `bin/` | raylib front end (`sky.ml` renderer, `main.ml` app) |
+| `lib/core/` | Layer 1: geometry (`Geom`, `Skyvec`) |
+| `lib/sky/` | Layer 2: star catalogue and visibility (`Catalogue`, `Visibility`) |
+| `lib/matching/` | Layer 3: stroke → star pattern (`Capture`, `Simplify`, `Index`, `Candidates`, `Fitter`) |
+| `lib/recognition/` | Layer 3b: trained recognition engine (`Engine`) |
+| `lib/game/` | Layer 4: screen framework and game rules (`Scene`, `Controls`, `Game`, `Projection`, `Morph`, `Narrate`) |
+| `bin/` | Layer 5: raylib app (`App` loop, `Welcome` and `Play` screens, `Play_view`, `Sky` renderer, `Main`) |
 | `test/` | OUnit2 tests, including end-to-end matches and an OCaml-vs-PyTorch agreement test for the engine |
 | `engine/train.py` | Synthetic data generator, transformer training and weight export |
 | `data/stars.csv` | Sample bright-star catalogue (48 stars; coordinates entered by hand, approximate) |
@@ -33,9 +40,12 @@ Mathlib** (`proofs/`) and explained in prose in
 | `proofs/` | Lean 4 + Mathlib proofs |
 | `docs/PROOFS.md` | Every theorem explained in paragraphs, mapped to the OCaml code |
 
+| `docs/SCENES.md` | How to add a screen |
+
 Every OCaml function is documented with the project template
 (`[name args] is…`, Requires, Returns, Raises, Example, Complexity), and
-every implementation adds a Pseudocode section.
+every implementation adds a Pseudocode section. `.ocamlformat` keeps
+those comments exactly as written, so `dune fmt` won't reflow them.
 
 ## Build and run
 
@@ -54,9 +64,10 @@ dune exec hack -- 40.7 -74.0   # latitude, longitude in degrees
 Without raylib, `dune build` and `dune test` still build and test the
 library; only the window app is skipped.
 
-Keys: drag with the left mouse button to draw, **C** clears, **S** saves a
+The app opens on a welcome screen; click or press Enter to start. In the
+game, drag with the left mouse button to draw, **C** clears, **S** saves a
 share card, **N** asks for an invented story (needs `ANTHROPIC_API_KEY`
-and `curl`).
+and `curl`), and **M** returns to the welcome screen.
 
 ## Retrain the engine
 
