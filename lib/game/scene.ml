@@ -122,8 +122,8 @@ let engine ctx = ctx.engine
 *)
 let location ctx = (ctx.lat, ctx.lon)
 
-type effect = Screenshot of string
-type 'a outcome = Continue of 'a * effect list | Goto of string | Quit
+type side_effect = Screenshot of string
+type 'a outcome = Continue of 'a * side_effect list | Goto of string | Quit
 
 module type S = sig
   type t
@@ -138,7 +138,7 @@ end
 type running = Running : (module S with type t = 'a) * 'a -> running
 
 type registry = (module S) list
-type step_result = Next of running * effect list | Stopped
+type step_result = Next of running * side_effect list | Stopped
 
 (**
    [idle ~width ~height] is an empty frame of input.

@@ -151,11 +151,11 @@ val location : ctx -> float * float
 
 (** {1 Scenes} *)
 
-type effect = Screenshot of string  (** save the frame just drawn to this file *)
+type side_effect = Screenshot of string  (** save the frame just drawn to this file *)
 (** Side effects a scene asks the loop to perform after drawing. *)
 
 type 'a outcome =
-  | Continue of 'a * effect list  (** stay on this scene with the new state *)
+  | Continue of 'a * side_effect list  (** stay on this scene with the new state *)
   | Goto of string                (** switch to the scene with this name *)
   | Quit                          (** close the app *)
 (** What a scene's [update] decides for the next frame. *)
@@ -248,7 +248,7 @@ val launch : registry -> ctx -> string -> running
 *)
 
 type step_result =
-  | Next of running * effect list  (** keep running this scene (maybe a new one) *)
+  | Next of running * side_effect list  (** keep running this scene (maybe a new one) *)
   | Stopped                        (** a scene returned [Quit] *)
 (** The result of advancing the app by one frame. *)
 

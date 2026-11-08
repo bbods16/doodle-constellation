@@ -104,7 +104,7 @@ any other scene's `update`.
   `main.ml`.
 - **Side effects go through `effects`.** Return
   `[Scene.Screenshot "file.png"]` and the loop saves the frame after it is
-  drawn. New effect kinds go in `Scene.effect` and `App.apply_effect`.
+  drawn. New effect kinds go in `Scene.side_effect` and `App.apply_effect`.
 - **Keys:** scenes see `Scene.key` values (`Enter`, `Space`, `Escape`,
   `Backspace`, `Tab`, arrows, `Letter 'a'..'z'`, `Digit 0..9`). To expose
   another raylib key, extend `Scene.key` and `App.key_map`. Escape is
