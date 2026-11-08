@@ -21,7 +21,7 @@
      │  ▔▔blue▔▔▔▔blue▔▔▔▔purple▔▔▔pink▔▔▔blue▔▔▔▔blue▔▔▔▔▔red▔▔    │  colour bar = rarity
      │                              ▲                               │
      │            NEW PACK: Event Horizon (Restricted)              │  reveal
-     │     "That Orion has the gravitational pull of zero viewers." │  sample insult
+     │     "That Orion has the gravitational pull of a wet fart."   │  sample insult
      │                                                              │
      │ [x] Astronomy 101  [ ] Cloudy Night  [x] Event Horizon ...   │  shelf: all packs
      │ Enter / click: open a case        M / Esc: back to the menu   │  footer

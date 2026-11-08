@@ -21,9 +21,10 @@
     session: 5 misses in total ends the game, and a good drawing never
     clears a strike (decided; see the plan doc).
 
-    The lines are playful trash talk aimed at the drawing, never at who
-    the player is: no slurs, nothing about identity, appearance or
-    real-life ability. Each line may contain [{score}] and [{target}],
+    The lines are vulgar, rude trash talk aimed at the drawing and the
+    player's drawing skill, never at who the player is: swearing is
+    fine, but no slurs and nothing about identity or appearance. Each
+    line may contain [{score}] and [{target}],
     filled in by {!insult}. Choosing a line is deterministic for a given
     seed, so tests can check exact output. *)
 
@@ -40,11 +41,11 @@ val max_strikes : int
 
 val insults : string list
 (** The pool of insult lines (with [{score}] / [{target}] placeholders),
-    e.g. ["{score}? Even the Big Bang was more organised."]. *)
+    e.g. ["{score}? What the fuck was that? The Big Bang was more organised."]. *)
 
 val final_disses : string list
 (** The pool of closing lines shown on the last strike, e.g.
-    ["Five strikes. The stars have filed a restraining order. Goodbye."]. *)
+    ["Five strikes. The stars have filed a restraining order. Now fuck off."]. *)
 
 val create : ?seed:int -> ?extra_insults:string list -> ?extra_disses:string list -> unit -> t
 (**

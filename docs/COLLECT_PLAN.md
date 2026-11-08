@@ -106,9 +106,10 @@ The normalisation half is already proved in `proofs/Proofs/Normalise.lean`.
 
 ## Insults
 
-Insults roast the **drawing**, never the person. There are no slurs and
-nothing about identity, looks or real-life ability. They are written to
-be funny, in the style of a trash-talking arcade game. The pools are
+Insults are vulgar and rude: they swear at the drawing and at the
+player's drawing skill. There are no slurs and nothing about identity or
+looks. They are written to be funny, in the style of a foul-mouthed
+trash-talking arcade game. The pools are
 `Roast.insults` (10 lines, can mention the score and the figure) and
 `Roast.final_disses` (4 lines). Edit those lists to change the tone.
 

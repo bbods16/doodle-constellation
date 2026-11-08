@@ -25,22 +25,22 @@ type verdict = Insult of string | Final_diss of string
 let max_strikes = 5
 
 let insults =
-  [ "{score}? Even the Big Bang was more organised.";
-    "That's not {target}. That's what the cat dragged across the sky.";
-    "{score}. Astronomers will name a new black hole after this: it absorbs all talent.";
-    "I've seen better constellations in a bowl of alphabet soup.";
-    "{target} called. It wants a restraining order.";
-    "{score}? Did you draw that during an earthquake?";
-    "Galileo went blind looking at stars. Lucky him, he never saw this.";
-    "Somewhere a telescope just closed its lens in shame.";
-    "That drawing has the structure of a meteor shower. Random and on fire.";
-    "{score}. The Hubble telescope is asking for a refund." ]
+  [ "{score}? What the fuck was that? The Big Bang was more organised.";
+    "That's not {target}. That's what the cat shat across the sky.";
+    "{score}. Astronomers will name a black hole after this, because it sucks that hard.";
+    "I've seen better constellations floating in a gas station toilet.";
+    "{target} called. It says go fuck yourself and leave it out of this.";
+    "{score}? Did you draw that with your ass during an earthquake?";
+    "Galileo went blind looking at stars. Lucky bastard never saw this shit.";
+    "Somewhere a telescope just threw up inside its own lens.";
+    "That drawing is a flaming pile of space shit. Random and on fire.";
+    "{score}. The Hubble wants a refund, you useless sack of stardust." ]
 
 let final_disses =
-  [ "Five strikes. The stars have filed a restraining order. Goodbye.";
-    "That's five. Even Pluto got more respect than these drawings. Game over.";
-    "Five misses. The universe is expanding just to get away from you. Bye.";
-    "Strike five. Go draw on a fogged-up window, the sky is closed to you." ]
+  [ "Five strikes. The stars have filed a restraining order. Now fuck off.";
+    "That's five. Even Pluto got more respect than this garbage. Game over, dipshit.";
+    "Five misses. The universe is expanding just to get the hell away from you. Piss off.";
+    "Strike five. Go draw on a fogged-up window, the sky is closed to your dumb ass." ]
 
 (**
    [create ?seed ?extra_insults ?extra_disses ()] starts with no strikes.

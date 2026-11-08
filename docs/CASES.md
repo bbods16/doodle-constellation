@@ -37,8 +37,8 @@ A roll picks the tier by those odds, then a pack in that tier,
 you own every pack of the tier that came up.
 
 Every pack adds 5 insults. The Restricted and rarer packs also add one
-final diss. Like the base lines, they roast the *drawing*, never the
-player.
+final diss. Like the base lines they swear freely at the drawing and
+the player's skill, with no slurs and nothing about identity or looks.
 
 ## Modules
 
