@@ -103,3 +103,19 @@ def test_blank_canvas_uses_no_round(client):
 
 def test_unknown_game_is_rejected(client):
     assert submit(client, "nope", scribble()).status_code == 404
+
+
+def test_every_constellation_has_at_least_two_facts():
+    from facts import FACTS
+    assert set(FACTS) == {server.short(n) for n in ALL}
+    for name, facts in FACTS.items():
+        assert len(facts) >= 2, name
+        assert all(f.strip() for f in facts), name
+        assert len(set(facts)) == len(facts), name
+
+
+def test_submit_returns_a_fact_about_the_target(client):
+    from facts import FACTS
+    g = new_game(client)
+    res = submit(client, g["game_id"], drawing_of(g["target"]["name"])).get_json()
+    assert res["fact"] in FACTS[server.short(res["answer"])]

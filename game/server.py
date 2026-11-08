@@ -15,6 +15,7 @@ from PIL import Image
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "model"))
 import constellation_cnn as cnn  # noqa: E402
+from facts import FACTS  # noqa: E402
 
 ROUNDS = 10
 # >1 softens the model's confidence; tested 1.5-3 and it only lowered good drawings' scores without giving wrong ones credit
@@ -132,7 +133,8 @@ def submit():
     game.points += earned
     game.history.append({"target": target, "points": earned, "predicted": result["predicted"]})
     game.index += 1
-    return jsonify({"answer": target, "points_earned": earned, **result, **state(body["game_id"], game)})
+    fact = random.choice(FACTS[short(target)])
+    return jsonify({"answer": target, "points_earned": earned, "fact": fact, **result, **state(body["game_id"], game)})
 
 
 def lan_address() -> str:

@@ -4,7 +4,6 @@
 const SKY = "rgb(8, 10, 24)";
 const INK = "#78beff";
 const PREVIEW_SECONDS = 4;
-const NEXT_DELAY_MS = 1800;
 
 const $ = (id) => document.getElementById(id);
 const board = $("board");
@@ -174,13 +173,23 @@ function showTarget() {
   }, 1000);
 }
 
-function showBanner(result) {
-  const banner = $("banner");
+function showResult(result) {
   const name = result.answer.split(" – ")[0];
-  banner.className = grade(result.points_earned);
-  banner.innerHTML =
-    `+${result.points_earned} points — the judge was ${result.points_earned}% sure this is ${name}` +
-    `<div class="detail">it thought: ${result.top3.map(([n, p]) => `${n.split(" – ")[0]} ${Math.round(p * 100)}%`).join(", ")}</div>`;
+  $("result").className = grade(result.points_earned);
+  $("result-points").textContent =
+    `+${result.points_earned} points — the judge was ${result.points_earned}% sure this is ${name}`;
+  $("result-guesses").textContent =
+    "it thought: " + result.top3.map(([n, p]) => `${n.split(" – ")[0]} ${Math.round(p * 100)}%`).join(", ");
+  $("fact-name").textContent = `— ${name}`;
+  $("result-fact").textContent = result.fact;
+  $("next-btn").textContent = result.game_over ? "See results" : "Next";
+}
+
+function nextRound() {
+  $("result").classList.add("hidden");
+  busy = false;
+  if (game.game_over) showGameOver();
+  else showTarget();
 }
 
 function showGameOver() {
@@ -209,6 +218,7 @@ async function startGame() {
   $("start").classList.add("hidden");
   $("gameover").classList.add("hidden");
   $("banner").classList.add("hidden");
+  $("result").classList.add("hidden");
   game = await api("/api/new");
   showTarget();
 }
@@ -221,13 +231,7 @@ async function submit() {
     const result = await api("/api/submit", { game_id: game.game_id, image: board.toDataURL("image/png") });
     game = result;
     renderHud();
-    showBanner(result);
-    setTimeout(() => {
-      $("banner").classList.add("hidden");
-      busy = false;
-      if (game.game_over) showGameOver();
-      else showTarget();
-    }, NEXT_DELAY_MS);
+    showResult(result);
   } catch (err) {
     busy = false;
     setLocked(false);
@@ -243,6 +247,7 @@ $("erase-btn").onclick = () => setMode("erase");
 $("clear-btn").onclick = clearBoard;
 $("submit-btn").onclick = submit;
 $("skip-preview").onclick = hidePreview;
+$("next-btn").onclick = nextRound;
 $("start-btn").onclick = startGame;
 $("again-btn").onclick = startGame;
 window.addEventListener("resize", resize);

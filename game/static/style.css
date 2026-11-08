@@ -115,6 +115,44 @@ body {
 #banner.okay { border: 2px solid var(--gold); }
 #banner .detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 
+#result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(36rem, 90%);
+  padding: 1.4rem 1.6rem;
+  border-radius: 1rem;
+  background: rgba(18, 22, 46, 0.96);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+#result.good { border: 2px solid var(--good); }
+#result.okay { border: 2px solid var(--gold); }
+#result.bad { border: 2px solid var(--bad); }
+#result-points { font-size: 1.25rem; font-weight: 600; }
+#result .detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+
+.fact {
+  margin: 1.1rem 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.7rem;
+  background: rgba(120, 190, 255, 0.08);
+  text-align: left;
+  line-height: 1.5;
+}
+
+.fact-title { color: var(--gold); font-weight: 600; margin-bottom: 0.3rem; }
+
+#next-btn {
+  background: var(--ink);
+  color: #06102a;
+  border: none;
+  font-weight: 700;
+  padding: 0.8rem 2.2rem;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
