@@ -1,0 +1,7 @@
+; Layer 3 - matching. May use: core, sky.
+(library
+ (name doodle_matching)
+ (public_name hack.matching)
+ (libraries hack.core hack.sky)
+ (flags
+  (:standard -open Doodle_core -open Doodle_sky)))

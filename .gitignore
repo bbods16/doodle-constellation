@@ -16,3 +16,5 @@ doodle_card.png
 .venv*/
 .pytest_cache/
 game/drawings/
+# Per-player collect-mode progress
+data/progress.csv

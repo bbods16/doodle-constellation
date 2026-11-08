@@ -1,0 +1,7 @@
+; Layer 2 - sky data. May use: core.
+(library
+ (name doodle_sky)
+ (public_name hack.sky)
+ (libraries hack.core)
+ (flags
+  (:standard -open Doodle_core)))

@@ -1,0 +1,9 @@
+version = 0.29.0
+profile = default
+margin = 100
+# Keep the documentation template exactly as written: one field per
+# line (Requires / Returns / Raises / Example / Complexity / Pseudocode)
+# and indented pseudocode. Without these two options ocamlformat reflows
+# every doc comment into a single unreadable paragraph.
+parse-docstrings = false
+wrap-comments = false

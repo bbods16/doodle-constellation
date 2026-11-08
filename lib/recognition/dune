@@ -1,0 +1,7 @@
+; Layer 3b - recognition engine. May use: core.
+(library
+ (name doodle_recognition)
+ (public_name hack.recognition)
+ (libraries hack.core)
+ (flags
+  (:standard -open Doodle_core)))

@@ -1,9 +1,10 @@
 (test
  (name test_hack)
- (libraries hack ounit2)
+ (libraries hack.core hack.sky hack.matching hack.recognition hack.game ounit2)
  (flags
-  (:standard -open Hack))
+  (:standard -open Doodle_core -open Doodle_sky -open Doodle_matching -open Doodle_recognition -open Doodle_game))
  (deps
   (file ../data/stars.csv)
+  (file ../data/asterisms.csv)
   (file ../data/engine_weights.txt)
   (file ../data/engine_testvec.txt)))

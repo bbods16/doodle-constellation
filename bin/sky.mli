@@ -8,7 +8,7 @@
     toward west and y toward north, and {!to_screen} flips y, so the
     screen shows the sky as seen facing it (north up, east left). *)
 
-type view = {
+type view = Projection.view = {
   stars : Catalogue.star array;
   centre : float * float;    (** (ra, dec) at the middle of the screen *)
   px_per_rad : float;        (** zoom *)
