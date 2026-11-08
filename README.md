@@ -64,6 +64,14 @@ dune exec hack -- 40.7 -74.0   # latitude, longitude in degrees
 Without raylib, `dune build` and `dune test` still build and test the
 library; only the window app is skipped.
 
+The app finds `data/stars.csv` on its own: it looks in the current folder
+and its parents, then next to the executable and its parents, so it works
+from anywhere inside the repo (including `bin/`, or by running
+`_build/default/bin/main.exe` directly). To use data elsewhere, pass the
+file (`hack path/to/stars.csv`) or set `DOODLE_DATA` to the folder that
+contains `stars.csv`. If nothing is found, it prints every place it
+looked.
+
 The app opens on a welcome screen; click or press Enter to start. In the
 game, drag with the left mouse button to draw, **C** clears, **S** saves a
 share card, **N** asks for an invented story (needs `ANTHROPIC_API_KEY`

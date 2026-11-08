@@ -523,9 +523,52 @@ let game_tests =
            let r = Game.mirror_about_centroid [| p 0. 0.; p 0. 2. |] [| p 0. 0. |] in
            assert_pt "mirrored" (p 0. 2.) r.(0)) ]
 
+let data_dir_tests =
+  (* Unix-style paths keep the expectations readable; Filename is
+     platform-aware, so build expected paths with it too. *)
+  let ( / ) = Filename.concat in
+  let root = Filename.dirname (Sys.getcwd ()) |> Filename.dirname |> Filename.dirname in
+  let repo = root / "repo" in
+  let stars_in d = d / "data" / Data_dir.stars_file in
+  "data_dir"
+  >::: [ ("ancestors" >:: fun _ ->
+           let a = Data_dir.ancestors (repo / "bin") in
+           assert_equal (repo / "bin") (List.hd a);
+           assert_bool "includes repo" (List.mem repo a);
+           assert_equal (Filename.dirname (List.nth a (List.length a - 1))) (List.nth a (List.length a - 1)));
+         ("found_from_subfolder" >:: fun _ ->
+           (* started inside bin/: the parent folder's data/ is found *)
+           let want = stars_in repo in
+           assert_equal (Ok want)
+             (Data_dir.find ~env:None ~cwd:(repo / "bin") ~exe:(root / "elsewhere" / "x.exe")
+                ~exists:(( = ) want)));
+         ("found_next_to_executable" >:: fun _ ->
+           (* started from an unrelated folder: found by walking up from the exe *)
+           let want = stars_in repo in
+           assert_equal (Ok want)
+             (Data_dir.find ~env:None ~cwd:(root / "tmp")
+                ~exe:(repo / "_build" / "default" / "bin" / "main.exe") ~exists:(( = ) want)));
+         ("env_wins" >:: fun _ ->
+           let d = root / "mydata" in
+           match Data_dir.candidates ~env:(Some d) ~cwd:repo ~exe:(repo / "x.exe") with
+           | first :: _ -> assert_equal (d / Data_dir.stars_file) first
+           | [] -> assert_failure "no candidates");
+         ("not_found_lists_tried" >:: fun _ ->
+           match Data_dir.find ~env:None ~cwd:(repo / "bin") ~exe:(repo / "x.exe") ~exists:(fun _ -> false) with
+           | Error tried ->
+               assert_bool "tried bin/data" (List.mem (stars_in (repo / "bin")) tried);
+               assert_bool "tried repo/data" (List.mem (stars_in repo) tried);
+               assert_equal (List.length tried) (List.length (List.sort_uniq compare tried))
+           | Ok _ -> assert_failure "should not be found");
+         ("real_repo" >:: fun _ ->
+           (* from the test's own build folder the real catalogue is found *)
+           match Data_dir.find ~env:None ~cwd:(Sys.getcwd ()) ~exe:Sys.executable_name ~exists:Sys.file_exists with
+           | Ok p -> assert_bool p (Sys.file_exists p)
+           | Error _ -> assert_failure "real catalogue not found") ]
+
 let () =
   run_test_tt_main
     ("doodle"
     >::: [ geom_tests; simplify_tests; capture_tests; catalogue_tests; index_tests;
            matching_tests; visibility_tests; morph_tests; narrate_tests; engine_tests;
-           scene_tests; controls_tests; game_tests ])
+           scene_tests; controls_tests; game_tests; data_dir_tests ])
