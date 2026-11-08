@@ -75,15 +75,38 @@ type ctx
     with {!make_ctx}, read it with the accessors below. *)
 
 val make_ctx :
-  stars:Catalogue.star array -> index:Index.t -> ?engine:Engine.t -> lat:float -> lon:float ->
-  unit -> ctx
+  stars:Catalogue.star array -> index:Index.t -> ?engine:Engine.t ->
+  ?figures:Asterism.t array -> ?data_dir:string -> lat:float -> lon:float -> unit -> ctx
 (**
-   [make_ctx ~stars ~index ?engine ~lat ~lon ()] bundles the shared resources.
-   Requires: [index] was built from [stars]; [lat], [lon] in radians (east +)
-   Returns: the context
+   [make_ctx ~stars ~index ?engine ?figures ?data_dir ~lat ~lon ()]
+   bundles the shared resources.
+   Requires: [index] was built from [stars]; [figures] were loaded against
+             [stars]; [lat], [lon] in radians (east +)
+   Returns: the context; [figures] defaults to none, [data_dir] to ["data"]
    Raises: nothing
    Example: stars (make_ctx ~stars ~index ~lat ~lon ()) == stars
    Complexity: O(1) time, O(1) space
+*)
+
+val figures : ctx -> Asterism.t array
+(**
+   [figures ctx] is the collectible constellation figures.
+   Requires: nothing
+   Returns: the figures given to {!make_ctx} (empty if none)
+   Raises: nothing
+   Example: figures (make_ctx ~stars ~index ~lat ~lon ()) = [||]
+   Complexity: O(1)
+*)
+
+val data_dir : ctx -> string
+(**
+   [data_dir ctx] is the folder holding the catalogue and other data
+   files (where collect mode saves progress).
+   Requires: nothing
+   Returns: the folder given to {!make_ctx}, ["data"] by default
+   Raises: nothing
+   Example: data_dir (make_ctx ~stars ~index ~lat ~lon ()) = "data"
+   Complexity: O(1)
 *)
 
 val stars : ctx -> Catalogue.star array

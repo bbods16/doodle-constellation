@@ -16,7 +16,6 @@ let to_screen = Projection.to_screen
 let view_for = Projection.view_for
 let empty_view = Projection.empty_view
 let star_radius = Projection.star_radius
-
 let star_colour = Color.create 230 235 255 255
 let line_colour = Color.create 120 190 255 255
 let text_colour = Color.create 200 210 230 255
@@ -75,8 +74,11 @@ let draw v fit =
       Array.iteri
         (fun k i ->
           let p = pts.(k) in
-          draw_text (Catalogue.label v.stars.(i)) (int_of_float p.x + 8) (int_of_float p.y - 8) 16
-            (fade text_colour alpha))
+          draw_text
+            (Catalogue.label v.stars.(i))
+            (int_of_float p.x + 8)
+            (int_of_float p.y - 8)
+            16 (fade text_colour alpha))
         f.stars;
       if f.weak then
         draw_text
@@ -123,7 +125,9 @@ let draw_stroke pts =
 *)
 let draw_info ~(fit : Fitter.fit) ~best =
   let y = get_screen_height () - 70 in
-  draw_text (Printf.sprintf "Fit error: %.2f deg%s" fit.rms_deg (if fit.mirrored then " (mirrored)" else ""))
+  draw_text
+    (Printf.sprintf "Fit error: %.2f deg%s" fit.rms_deg
+       (if fit.mirrored then " (mirrored)" else ""))
     20 y 20 text_colour;
   match best with
   | Some (t, alt, az) ->

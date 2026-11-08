@@ -29,21 +29,50 @@ type ctx = {
   stars : Catalogue.star array;
   index : Index.t;
   engine : Engine.t option;
+  figures : Asterism.t array;
+  data_dir : string;
   lat : float;
   lon : float;
 }
 
 (**
-   [make_ctx ~stars ~index ?engine ~lat ~lon ()] bundles shared resources.
+   [make_ctx ~stars ~index ?engine ?figures ?data_dir ~lat ~lon ()]
+   bundles shared resources.
    Requires: [index] built from [stars]
    Returns: the context
    Raises: nothing
    Example: stars (make_ctx ~stars ~index ~lat ~lon ()) == stars
    Complexity: O(1)
    Pseudocode:
-     return { stars; index; engine; lat; lon }
+     return { stars; index; engine; figures (default [||]);
+              data_dir (default "data"); lat; lon }
 *)
-let make_ctx ~stars ~index ?engine ~lat ~lon () = { stars; index; engine; lat; lon }
+let make_ctx ~stars ~index ?engine ?(figures = [||]) ?(data_dir = "data") ~lat ~lon () =
+  { stars; index; engine; figures; data_dir; lat; lon }
+
+(**
+   [figures ctx] is the collectible figures.
+   Requires: nothing
+   Returns: [ctx.figures]
+   Raises: nothing
+   Example: figures (make_ctx ~stars ~index ~lat ~lon ()) = [||]
+   Complexity: O(1)
+   Pseudocode:
+     return ctx.figures
+*)
+let figures ctx = ctx.figures
+
+(**
+   [data_dir ctx] is the data folder.
+   Requires: nothing
+   Returns: [ctx.data_dir]
+   Raises: nothing
+   Example: data_dir (make_ctx ~stars ~index ~lat ~lon ()) = "data"
+   Complexity: O(1)
+   Pseudocode:
+     return ctx.data_dir
+*)
+let data_dir ctx = ctx.data_dir
 
 (**
    [stars ctx] is the catalogue.

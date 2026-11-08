@@ -1,12 +1,8 @@
-(* PLANNED (collect mode): stub implementation. The interface in
-   collection.mli is the contract; replace each [todo] with the real code.
-   See docs/COLLECT_PLAN.md. *)
+(* Collected figures and best scores. See collection.mli for the contract. *)
 
 type entry = { figure : Asterism.t; collected : bool; best : float option }
 type t = entry array
 type record_result = { collected_now : bool; new_best : bool; best : float }
-
-let todo what = failwith ("Collection." ^ what ^ ": not implemented yet (see collection.mli)")
 
 (**
    [create figures] is a fresh collection.
@@ -18,7 +14,33 @@ let todo what = failwith ("Collection." ^ what ^ ": not implemented yet (see col
    Pseudocode:
      check names distinct ; map each figure to { figure; collected = false; best = None }
 *)
-let create (_ : Asterism.t array) : t = todo "create"
+let create figures =
+  let names = Array.map Asterism.name figures in
+  Array.iteri
+    (fun i n ->
+      for j = 0 to i - 1 do
+        if names.(j) = n then invalid_arg ("Collection.create: duplicate figure " ^ n)
+      done)
+    names;
+  Array.map (fun figure -> { figure; collected = false; best = None }) figures
+
+(**
+   [find c name] is the position of the named figure.
+   Requires: nothing
+   Returns: Some index or None
+   Raises: nothing
+   Example: find (create figures) "Orion" = Some 2
+   Complexity: O(n)
+   Pseudocode:
+     first i with name of c.(i) = name
+*)
+let find (c : t) name =
+  let rec go i =
+    if i >= Array.length c then None
+    else if Asterism.name c.(i).figure = name then Some i
+    else go (i + 1)
+  in
+  go 0
 
 (**
    [next_target c] is the first uncollected figure.
@@ -30,7 +52,8 @@ let create (_ : Asterism.t array) : t = todo "create"
    Pseudocode:
      first entry with collected = false, mapped to its figure
 *)
-let next_target (_ : t) : Asterism.t option = todo "next_target"
+let next_target (c : t) =
+  Array.to_list c |> List.find_opt (fun e -> not e.collected) |> Option.map (fun e -> e.figure)
 
 (**
    [record c ~name ~score] notes one attempt.
@@ -43,11 +66,20 @@ let next_target (_ : t) : Asterism.t option = todo "next_target"
      e <- entry named [name] (else fail)
      new_best <- e.best = None or score > e.best
      collected_now <- not e.collected and score >= Accuracy.pass_mark
-     e' <- { e with collected = e.collected || collected_now;
-                    best = max e.best score }
+     e' <- { e with collected = e.collected || collected_now; best = max e.best score }
      return (c with e replaced by e', { collected_now; new_best; best = e'.best })
 *)
-let record (_ : t) ~name:(_ : string) ~score:(_ : float) : t * record_result = todo "record"
+let record (c : t) ~name ~score =
+  match find c name with
+  | None -> invalid_arg ("Collection.record: unknown figure " ^ name)
+  | Some i ->
+      let e = c.(i) in
+      let new_best = match e.best with None -> true | Some b -> score > b in
+      let collected_now = (not e.collected) && score >= Accuracy.pass_mark in
+      let best = match e.best with None -> score | Some b -> Float.max b score in
+      let c' = Array.copy c in
+      c'.(i) <- { e with collected = e.collected || collected_now; best = Some best };
+      (c', { collected_now; new_best; best })
 
 (**
    [best c name] is the best score.
@@ -59,7 +91,7 @@ let record (_ : t) ~name:(_ : string) ~score:(_ : float) : t * record_result = t
    Pseudocode:
      the entry's best, or None if not found
 *)
-let best (_ : t) (_ : string) : float option = todo "best"
+let best (c : t) name = Option.bind (find c name) (fun i -> c.(i).best)
 
 (**
    [is_collected c name] tells whether it is collected.
@@ -71,7 +103,7 @@ let best (_ : t) (_ : string) : float option = todo "best"
    Pseudocode:
      the entry's collected flag, or false
 *)
-let is_collected (_ : t) (_ : string) : bool = todo "is_collected"
+let is_collected (c : t) name = match find c name with Some i -> c.(i).collected | None -> false
 
 (**
    [figures c] is every figure in order.
@@ -142,8 +174,16 @@ let progress_label c = Printf.sprintf "%d / %d collected" (collected_count c) (t
    Complexity: O(n)
    Pseudocode:
      write "name,collected,best" then one line per entry
+     (best printed with 17 significant digits, empty when None)
 *)
-let save (_ : string) (_ : t) : unit = todo "save"
+let save path (c : t) =
+  Out_channel.with_open_text path (fun oc ->
+      output_string oc "name,collected,best\n";
+      Array.iter
+        (fun e ->
+          Printf.fprintf oc "%s,%b,%s\n" (Asterism.name e.figure) e.collected
+            (match e.best with Some b -> Printf.sprintf "%.17g" b | None -> ""))
+        c)
 
 (**
    [load figures path] restores progress.
@@ -158,4 +198,18 @@ let save (_ : string) (_ : t) : unit = todo "save"
        set that entry's collected and best
      with any error -> c
 *)
-let load (_ : Asterism.t array) (_ : string) : t = todo "load"
+let load figures path =
+  let c = create figures in
+  try
+    let lines = In_channel.with_open_text path In_channel.input_all |> String.split_on_char '\n' in
+    List.iter
+      (fun line ->
+        match String.split_on_char ',' (String.trim line) with
+        | [ name; collected; best ] -> (
+            match (find c name, bool_of_string_opt collected) with
+            | Some i, Some col -> c.(i) <- { (c.(i)) with collected = col; best = float_of_string_opt best }
+            | _ -> ())
+        | _ -> ())
+      lines;
+    c
+  with Sys_error _ | Failure _ -> create figures

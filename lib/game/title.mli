@@ -1,8 +1,7 @@
 (** Title: the welcome page's logic, pure (no drawing, no disk). The
     [Welcome] screen becomes glue over this and [Title_view].
 
-    PLANNED (welcome page) — interface only; the implementation is a stub.
-    See [docs/WELCOME_PLAN.md].
+    Design notes: [docs/WELCOME_PLAN.md].
 
     {2 Pages}
     {v
@@ -95,8 +94,10 @@ val update : Scene.input -> t -> t * outcome
    [update inp t] is one frame: advance the clock and animation, read
    {!Menu} commands from [inp], apply them to the current page's menu,
    and turn a chosen action into a page change or an outcome. Escape on
-   [Help] or [Confirm_reset] returns to [Main]; on [Help] any key or
-   click also returns.
+   [Main] quits; on [Help] or [Confirm_reset] it returns to [Main]; on
+   [Help] any key or click also returns. Hovering only changes the
+   selection when the mouse actually moves, so a resting mouse doesn't
+   fight the arrow keys.
    Requires: nothing
    Returns: the new state and what the screen should do
    Raises: nothing

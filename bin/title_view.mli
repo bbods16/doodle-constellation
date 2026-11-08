@@ -1,8 +1,7 @@
 (** Title_view: draws the welcome page ({!Title.t}), one function per
     element.
 
-    PLANNED (welcome page) — interface only; the implementation is a stub.
-    See [docs/WELCOME_PLAN.md].
+    Design notes: [docs/WELCOME_PLAN.md].
 
     {v
      ┌──────────────────────────────────────────────────────────────┐

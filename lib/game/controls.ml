@@ -4,7 +4,7 @@ type command = Pen_down of Geom.pt | Pen_up | Clear | Save_card | Ask_story | Op
 
 let bindings =
   [ (Scene.Letter 'c', Clear); (Scene.Letter 's', Save_card); (Scene.Letter 'n', Ask_story);
-    (Scene.Letter 'm', Open_menu) ]
+    (Scene.Letter 'm', Open_menu); (Scene.Escape, Open_menu) ]
 
 (**
    [read inp] turns one frame of input into commands.

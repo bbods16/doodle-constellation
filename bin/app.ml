@@ -71,7 +71,7 @@ let apply_effect = function Scene.Screenshot path -> take_screenshot path
    Example: run default_config ctx reg ~first:"welcome"
    Complexity: per frame, the current scene's update and draw
    Pseudocode:
-     open window (title, size) ; set target fps
+     open window (title, size) ; set target fps ; disable raylib's Escape-to-exit
      current <- Scene.launch reg ctx first ; time <- 0 ; running <- true
      while running and not window_should_close ():
        inp <- read_input ~time () ; time <- time + inp.dt
@@ -86,6 +86,8 @@ let apply_effect = function Scene.Screenshot path -> take_screenshot path
 let run cfg ctx reg ~first =
   init_window cfg.width cfg.height cfg.title;
   set_target_fps cfg.fps;
+  (* Escape is handled by the screens (back / quit), not by raylib. *)
+  set_exit_key Key.Null;
   Fun.protect ~finally:close_window (fun () ->
       let current = ref (Scene.launch reg ctx first) in
       let time = ref 0. and running = ref true in

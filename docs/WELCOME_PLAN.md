@@ -1,11 +1,13 @@
-# Plan: Welcome page
+# Welcome page
 
-**Status:** interfaces designed and type-checked; implementations are
-stubs (functions fail with *"not implemented yet (see X.mli)"*). The
-build passes and the current welcome screen (`bin/welcome.ml`) still runs
-unchanged until this is built. Companion to
+**Status: built.** `Menu`, `Attract` and `Title` are implemented and
+unit-tested, `Title_view` draws the page, and `bin/welcome.ml` is now
+the glue described below. It was checked in the running app: the menu,
+How to play, Escape back, and Reset progress (the confirm screen opens
+on "No"; "Yes" deletes the progress file). Companion to
 [COLLECT_PLAN.md](COLLECT_PLAN.md): the welcome page is the way into
-collect mode.
+collect mode. This document was the plan; **"As built"** at the end
+lists the differences.
 
 ## What it does
 
@@ -72,7 +74,7 @@ let draw = Title_view.draw
 `summary_of` turns a `Collection.t` into `Title.summary` (collected
 count, total, and the average best over attempted figures).
 
-## Changes needed outside the new modules
+## Changes outside the new modules (all done)
 
 Shared with the collect plan; do them once:
 
@@ -84,7 +86,7 @@ Shared with the collect plan; do them once:
 3. **Register collect mode** (COLLECT_PLAN.md, change 2). Until then,
    disable the Collect button: create it with `enabled = false`.
 
-## Build order (each step testable on its own)
+## Build order (followed; each step has its tests)
 
 1. **`Menu`:** test that `create` selects the first enabled item; Up/Down
    skip disabled items and wrap; `item_at` hits inside and on edges and
@@ -103,13 +105,33 @@ Shared with the collect plan; do them once:
 4. **`Title_view`**, then the `Welcome` rewrite. Check by hand: mouse
    hover, clicks, keys, and the animation.
 
-## Decisions to confirm
+## Decisions
 
-| Question | Planned default | Alternative |
+| Question | Built as | Possible change later |
 | --- | --- | --- |
 | Menu item selected on arrival | Collect the constellations | remember the last choice |
 | Free draw mode | kept, as menu item 2 | remove it, collect mode only |
 | Confirm before resetting progress | yes, **No** selected by default | reset immediately |
 | Background animation | on, cycling all figures | static starfield only |
-| Escape on the main menu | closes the app (raylib's default exit key) | do nothing; quit only via the menu |
+| Escape on the main menu | quits (now handled by the menu itself, not raylib) | do nothing; quit only via the menu |
 | Show your best % per figure on the title screen | only the average, under Collect | a full collection panel on the title screen |
+
+## As built: differences from the plan
+
+1. **Escape is handled by the screens, not raylib.** raylib closed the
+   window on Escape before any screen saw it, so "Escape goes back" on
+   How to play and the reset confirm couldn't work. `App.run` now turns
+   raylib's exit key off: Escape quits from the main menu, goes back from
+   How to play and the confirm, and returns to the menu from either game.
+2. **Hover only moves the selection when the mouse moves.** Otherwise a
+   mouse resting over a button would snap the selection back every frame
+   and fight the arrow keys. There's a test for this.
+3. **"Reset progress" is enabled once anything was attempted**, not only
+   after something is collected, so a run of failed attempts can also be
+   wiped.
+4. **Plain ASCII on screen** (`>` for the selected item, `[x]` for
+   collected). raylib's built-in font has no glyphs for symbols like ✓ or
+   ▸ and would draw them as `?`.
+5. **`Accuracy.prefix` is shared.** The background animation draws a
+   figure part-way using the same function the live score uses, instead
+   of a second copy.

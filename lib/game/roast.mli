@@ -1,8 +1,7 @@
 (** Roast: insults for drawings under 50%, and the final diss that ends
     the game.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     Every finished drawing that scores below {!Accuracy.pass_mark} is a
     strike and earns an insult. On strike {!max_strikes} the player gets

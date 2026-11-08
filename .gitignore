@@ -11,3 +11,6 @@ __pycache__/
 
 # App output
 doodle_card.png
+
+# Per-player collect-mode progress
+data/progress.csv

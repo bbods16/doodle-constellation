@@ -2,8 +2,7 @@
     state and rules (no raylib). [bin/collect_scene.ml] wires it to the
     screen exactly the way [Play] wires {!Game}.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     {2 Flow}
     {v
@@ -62,7 +61,10 @@ val apply : t -> Controls.command -> t
    [Pen_up] scores the stroke ({!Accuracy.score}), runs {!Judge.judge}
    and enters [Verdict] (or [Dissed] on [Game_over]); [Clear] drops the
    stroke and returns to [Prompt]. Other commands leave [t] unchanged.
-   Ignored entirely in [Dissed] and [Complete].
+   Ignored entirely in [Dissed] and [Complete]. Pen commands are also
+   ignored until the button has been up for one frame after the mode
+   starts, so the click that opened collect mode can't start a stroke
+   (and an instant 0% strike).
    Requires: nothing
    Returns: the new state
    Raises: nothing

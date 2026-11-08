@@ -19,7 +19,7 @@
     {- {!Morph}      — the animation that slides the drawing onto the stars.}
     {- {!Narrate}    — optional invented story, fetched in the background.}}
 
-    {2 PLANNED: collect mode (interfaces only, stubs; see docs/COLLECT_PLAN.md)}
+    {2 Collect mode (see docs/COLLECT_PLAN.md)}
     {ul
     {- {!Accuracy}   — drawing vs figure → "87.3%", tiers, colour, pass mark.}
     {- {!Collection} — collected figures and best score each; saved to disk.}
@@ -27,7 +27,7 @@
     {- {!Judge}      — one score → one verdict (collected, record, insult, game over).}
     {- {!Collect}    — the mode's state machine: prompt, draw, verdict, quit.}}
 
-    {2 PLANNED: welcome page (interfaces only, stubs; see docs/WELCOME_PLAN.md)}
+    {2 Welcome page (see docs/WELCOME_PLAN.md)}
     {ul
     {- {!Menu}       — generic keyboard + mouse menu: items, selection, layout, hit-test.}
     {- {!Title}      — the welcome page's rules: main menu, how to play, confirm reset.}

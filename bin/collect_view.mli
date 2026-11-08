@@ -1,8 +1,7 @@
 (** Collect_view: draws collect mode, one function per element, in the
     style of drawtheperfectcircle.com.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     {v
      ┌────────────────────────────────────────────────────────────────┐

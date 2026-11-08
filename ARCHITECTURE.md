@@ -24,24 +24,28 @@ to open a `.ml` file to use something.
         a layer may use only the layers below it (dune enforces this)
 ```
 
-| Layer | Read this interface | Built modules | Planned modules (stubs) | May use |
-| --- | --- | --- | --- | --- |
-| 1 core | [`lib/core/doodle_core.mli`](lib/core/doodle_core.mli) | `Geom`, `Skyvec` | — | — |
-| 2 sky | [`lib/sky/doodle_sky.mli`](lib/sky/doodle_sky.mli) | `Catalogue`, `Visibility`, `Data_dir` | `Asterism` | core |
-| 3 matching | [`lib/matching/doodle_matching.mli`](lib/matching/doodle_matching.mli) | `Capture`, `Simplify`, `Index`, `Candidates`, `Fitter` | — | core, sky |
-| 3b recognition | [`lib/recognition/doodle_recognition.mli`](lib/recognition/doodle_recognition.mli) | `Engine` | — | core |
-| 4 game | [`lib/game/doodle_game.mli`](lib/game/doodle_game.mli) | `Scene`, `Controls`, `Game`, `Projection`, `Morph`, `Narrate` | collect: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`; welcome: `Menu`, `Title`, `Attract` | core, sky, matching, recognition |
-| 5 app | [`bin/main.mli`](bin/main.mli) | `App`, `Welcome`, `Play`, `Play_view`, `Sky`, `Main` | collect: `Collect_scene`, `Collect_view`; welcome: `Title_view` | every layer + raylib |
+| Layer | Read this interface | Modules | May use |
+| --- | --- | --- | --- |
+| 1 core | [`lib/core/doodle_core.mli`](lib/core/doodle_core.mli) | `Geom`, `Skyvec` | — |
+| 2 sky | [`lib/sky/doodle_sky.mli`](lib/sky/doodle_sky.mli) | `Catalogue`, `Visibility`, `Data_dir`, `Asterism` | core |
+| 3 matching | [`lib/matching/doodle_matching.mli`](lib/matching/doodle_matching.mli) | `Capture`, `Simplify`, `Index`, `Candidates`, `Fitter` | core, sky |
+| 3b recognition | [`lib/recognition/doodle_recognition.mli`](lib/recognition/doodle_recognition.mli) | `Engine` | core |
+| 4 game | [`lib/game/doodle_game.mli`](lib/game/doodle_game.mli) | framework: `Scene`, `Controls`; free draw: `Game`, `Projection`, `Morph`, `Narrate`; collect mode: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`; welcome page: `Menu`, `Title`, `Attract` | core, sky, matching, recognition |
+| 5 app | [`bin/main.mli`](bin/main.mli) | loop: `App`, `Main`; screens: `Welcome` + `Title_view`, `Play` + `Play_view`, `Collect_scene` + `Collect_view`; renderer: `Sky` | every layer + raylib |
 
 Only layer 5 touches raylib. Layers 1–4 are pure OCaml and are unit-tested
 without a window (`dune test`).
 
-**Planned modules** have their real `.mli` and a stub `.ml` whose
-functions fail with *"not implemented yet (see X.mli)"*. They compile, so
-their interfaces are checked, but nothing calls them yet and the
-planned screens aren't registered in `main.ml`. Each is marked
-`PLANNED` in its `.mli` and in its layer's interface file. Build them
-from the plan docs below.
+## The three screens
+
+| Screen (scene name) | Rules (pure, tested) | Glue | Drawing |
+| --- | --- | --- | --- |
+| Welcome page (`"welcome"`, the first screen) | `Title`, `Menu`, `Attract` | `bin/welcome.ml` | `bin/title_view.ml` |
+| Free draw (`"play"`) | `Game`, `Controls` | `bin/play.ml` | `bin/play_view.ml` |
+| Collect mode (`"collect"`) | `Collect`, `Judge`, `Accuracy`, `Collection`, `Roast`, `Controls` | `bin/collect_scene.ml` | `bin/collect_view.ml` |
+
+Every screen follows the same pattern: the glue reads input, hands it to
+the pure rules, and hands the resulting state to the drawing module.
 
 ## Docs
 
@@ -51,8 +55,8 @@ from the plan docs below.
 | [README.md](README.md) | build, run, retrain the engine, check the proofs |
 | [docs/SCENES.md](docs/SCENES.md) | how to add a screen |
 | [docs/PROOFS.md](docs/PROOFS.md) | every Lean theorem explained, mapped to the code |
-| [docs/COLLECT_PLAN.md](docs/COLLECT_PLAN.md) | PLANNED collect mode: draw each constellation, live %, insults, 5 strikes |
-| [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) | PLANNED welcome page: menu, how to play, reset, background animation |
+| [docs/COLLECT_PLAN.md](docs/COLLECT_PLAN.md) | collect mode design: scoring rule, verdicts, insults, 5 strikes, and what changed while building it |
+| [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) | welcome page design: menu, how to play, reset, background animation |
 
 ## One frame, end to end
 
@@ -107,8 +111,10 @@ from the plan docs below.
 | teach the engine a new figure | `data/asterisms.csv`, then `engine/train.py` | [README](README.md) |
 | change the matching maths | `lib/matching/` (and check `proofs/`) | [docs/PROOFS.md](docs/PROOFS.md) |
 | change where data files are looked for | `lib/sky/data_dir.ml` | [README](README.md) |
-| build collect mode | the planned modules listed above, in the plan's order | [docs/COLLECT_PLAN.md](docs/COLLECT_PLAN.md) |
-| build the new welcome page | the planned modules listed above, then rewrite `bin/welcome.ml` as glue | [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) |
+| change scoring strictness or the pass mark | `Accuracy.tolerance` / `Accuracy.pass_mark` in `lib/game/accuracy.ml` | [docs/COLLECT_PLAN.md](docs/COLLECT_PLAN.md) |
+| edit the insults | `Roast.insults` / `Roast.final_disses` in `lib/game/roast.ml` | |
+| add a constellation to collect | a row in `data/asterisms.csv` (its stars must be in `data/stars.csv`) | |
+| change the welcome menu | `Title.main_items` in `lib/game/title.ml` | [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) |
 
 ## Conventions
 

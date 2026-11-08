@@ -1,6 +1,4 @@
-(* PLANNED (collect mode): stub implementation. The interface in
-   collect.mli is the contract; replace each [todo] with the real code.
-   See docs/COLLECT_PLAN.md. *)
+(* Collect mode's state machine. See collect.mli for the contract. *)
 
 type phase =
   | Prompt
@@ -16,14 +14,14 @@ type t = {
   capture : Capture.t;
   live : float;
   phase : phase;
-  dirty : bool;            (* collection changed since the last save request *)
+  dirty : bool;      (* collection changed since the last save request *)
+  armed : bool;      (* the button has been up since the mode started *)
+  pen_seen : bool;   (* a Pen_down arrived this frame *)
 }
 
 let verdict_seconds = 2.5
 let diss_seconds = 4.0
 let progress_file = "progress.csv"
-
-let todo what = failwith ("Collect." ^ what ^ ": not implemented yet (see collect.mli)")
 
 (**
    [init c r] starts on the next uncollected figure.
@@ -35,52 +33,126 @@ let todo what = failwith ("Collect." ^ what ^ ": not implemented yet (see collec
    Pseudocode:
      target <- Collection.next_target c
      phase <- if target = None then Complete else Prompt
-     return { c; r; target; empty capture; live = 0; phase; dirty = false }
+     return { c; r; target; empty capture; live = 0; phase; not dirty; not armed }
 *)
-let init (_ : Collection.t) (_ : Roast.t) : t = todo "init"
+let init c r =
+  let target = Collection.next_target c in
+  { collection = c; roast = r; target; capture = Capture.empty; live = 0.;
+    phase = (if target = None then Complete else Prompt); dirty = false; armed = false;
+    pen_seen = false }
+
+(**
+   [next_round t] moves on to the next uncollected figure with a clean slate.
+   Requires: nothing
+   Returns: Prompt on the next target, or Complete
+   Raises: nothing
+   Example: phase (next_round t) = Prompt
+   Complexity: O(n)
+   Pseudocode:
+     target <- Collection.next_target t.collection
+     return { t with target; empty capture; live = 0;
+                     phase = if target = None then Complete else Prompt }
+*)
+let next_round t =
+  let target = Collection.next_target t.collection in
+  { t with target; capture = Capture.empty; live = 0.;
+    phase = (if target = None then Complete else Prompt) }
+
+(**
+   [pen_down p t] starts or extends the stroke and updates the live score.
+   Requires: a target
+   Returns: state in Drawing
+   Raises: nothing
+   Example: phase (pen_down p (init c r)) = Drawing (once armed)
+   Complexity: O(Capture.window) + Accuracy.live
+   Pseudocode:
+     t <- if phase is Verdict then next_round t else t   (skip the rest of the verdict)
+     if phase is Complete then t
+     capture <- (if phase = Drawing then capture else empty) + p
+     live <- Accuracy.live ~target:(shape target) (raw points: smoothing
+             would round the corners and cap sharp figures below 90%)
+*)
+let pen_down p t =
+  let t = match t.phase with Verdict _ -> next_round t | _ -> t in
+  match (t.phase, t.target) with
+  | (Prompt | Drawing), Some f ->
+      let capture = Capture.add (if t.phase = Drawing then t.capture else Capture.empty) p in
+      let live = Accuracy.live ~target:(Asterism.shape f) (Capture.raw capture) in
+      { t with capture; live; phase = Drawing }
+  | _ -> t
+
+(**
+   [pen_up t] scores the stroke and judges it.
+   Requires: nothing
+   Returns: Verdict or Dissed (unchanged unless Drawing)
+   Raises: nothing
+   Example: phase (pen_up drawing_state) = Verdict (...)
+   Complexity: Accuracy.score + Judge.judge
+   Pseudocode:
+     score <- Accuracy.score ~target:(shape target) (raw points)
+     (c, r, v) <- Judge.judge collection roast ~target ~score
+     phase <- match v with
+              | Game_over { line } -> Dissed (line, diss_seconds)
+              | v -> Verdict (v, verdict_seconds)
+     dirty <- true
+*)
+let pen_up t =
+  match (t.phase, t.target) with
+  | Drawing, Some f ->
+      let score = Accuracy.score ~target:(Asterism.shape f) (Capture.raw t.capture) in
+      let collection, roast, v = Judge.judge t.collection t.roast ~target:f ~score in
+      let phase =
+        match v with
+        | Judge.Game_over { line; _ } -> Dissed (line, diss_seconds)
+        | v -> Verdict (v, verdict_seconds)
+      in
+      { t with collection; roast; phase; live = score; dirty = true }
+  | _ -> t
 
 (**
    [apply t cmd] carries out one command.
    Requires: nothing
    Returns: new state
    Raises: nothing
-   Example: phase (apply (init c r) (Controls.Pen_down p)) = Drawing
+   Example: phase (apply (init c r) (Controls.Pen_down p)) = Drawing (once armed)
    Complexity: see collect.mli
    Pseudocode:
      match phase, cmd with
        | (Dissed _ | Complete), _ -> t
-       | (Prompt | Verdict _ | Drawing), Pen_down p ->
-           capture <- (if phase = Drawing then capture else empty) + p
-           live <- Accuracy.live ~target:(shape target) (stroke)
-           phase <- Drawing
-       | Drawing, Pen_up ->
-           score <- Accuracy.score ~target:(shape target) (stroke)
-           (c, r, v) <- Judge.judge collection roast ~target ~score
-           phase <- match v with
-                    | Game_over { line } -> Dissed (line, diss_seconds)
-                    | v -> Verdict (v, verdict_seconds)
-           dirty <- true
-       | _, Clear -> drop the stroke ; phase <- Prompt
+       | _, Pen_down p -> note pen_seen ; if armed then pen_down p t else t
+       | _, Pen_up -> if armed then pen_up t else t
+       | _, Clear -> drop the stroke ; Prompt (from Drawing or Verdict: next_round)
        | _ -> t
 *)
-let apply (_ : t) (_ : Controls.command) : t = todo "apply"
+let apply t (cmd : Controls.command) =
+  match (t.phase, cmd) with
+  | (Dissed _ | Complete), _ -> t
+  | _, Pen_down p ->
+      let t = { t with pen_seen = true } in
+      if t.armed then pen_down p t else t
+  | _, Pen_up -> if t.armed then pen_up t else t
+  | _, Clear -> next_round t
+  | _, (Save_card | Ask_story | Open_menu) -> t
 
 (**
-   [tick dt t] counts down timers.
+   [tick dt t] counts down timers and arms the pen.
    Requires: dt >= 0
    Returns: advanced state
    Raises: nothing
    Example: phase (tick 10. verdict_state) = Prompt
    Complexity: O(n) on a target change
    Pseudocode:
-     Verdict (v, s) -> if s - dt > 0 then Verdict (v, s - dt)
-                       else target <- Collection.next_target collection
-                            phase <- if target = None then Complete else Prompt
-                            clear the stroke
+     armed <- armed or not pen_seen ; pen_seen <- false
+     Verdict (v, s) -> if s - dt > 0 then Verdict (v, s - dt) else next_round
      Dissed (l, s)  -> Dissed (l, s - dt)       (wants_quit once s <= 0)
      other -> unchanged
 *)
-let tick (_ : float) (_ : t) : t = todo "tick"
+let tick dt t =
+  let t = { t with armed = t.armed || not t.pen_seen; pen_seen = false } in
+  match t.phase with
+  | Verdict (v, s) -> if s -. dt > 0. then { t with phase = Verdict (v, s -. dt) } else next_round t
+  | Dissed (line, s) -> { t with phase = Dissed (line, s -. dt) }
+  | Prompt | Drawing | Complete -> t
 
 (**
    [wants_quit t] is true once the diss countdown ends.

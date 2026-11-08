@@ -2,8 +2,7 @@
     logic: no drawing. Used by the welcome page ({!Title}); reusable for
     a pause or settings menu later.
 
-    PLANNED (welcome page) — interface only; the implementation is a stub.
-    See [docs/WELCOME_PLAN.md].
+    Design notes: [docs/WELCOME_PLAN.md].
 
     The menu is generic in its action type ['a]: the welcome page uses
     {!Title.action}, another screen can use its own. Selection skips

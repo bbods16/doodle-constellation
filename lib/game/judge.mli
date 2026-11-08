@@ -1,8 +1,7 @@
 (** Judge: turns one finished drawing's score into a verdict, updating
     the collection and the strike count.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     {v
     score >= 50% ─► Collection.record ─► Collected_new | New_record | Passed

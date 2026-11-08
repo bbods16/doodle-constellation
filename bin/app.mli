@@ -12,10 +12,10 @@
     [play.ml], ...) registered in [main.ml]. *)
 
 type config = {
-  title : string;             (** window title *)
-  width : int;                (** window width in pixels *)
-  height : int;               (** window height in pixels *)
-  fps : int;                  (** target frames per second *)
+  title : string;  (** window title *)
+  width : int;  (** window width in pixels *)
+  height : int;  (** window height in pixels *)
+  fps : int;  (** target frames per second *)
   background : Raylib.Color.t;  (** clear colour for every frame *)
 }
 
@@ -36,7 +36,8 @@ val run : config -> Scene.ctx -> Scene.registry -> first:string -> unit
 (**
    [run cfg ctx reg ~first] opens the window and runs the loop, starting
    on the scene named [first], until a scene returns [Quit] or the window
-   is closed (close button or Escape, raylib's default exit key).
+   is closed (close button). Escape is not an exit key: screens decide
+   what it does.
    Requires: a display; [first] is registered in [reg]
    Returns: unit after closing the window
    Raises: [Invalid_argument] if [first] (or a later [Goto]) names an

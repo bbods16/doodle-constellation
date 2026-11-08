@@ -1,11 +1,12 @@
-# Plan: Collect mode — "collect all the constellations"
+# Collect mode — "collect all the constellations"
 
-**Status:** interfaces designed and type-checked; implementations are
-stubs. Every planned module has its real `.mli` in its layer and a
-`.ml` whose functions fail with *"not implemented yet (see X.mli)"*. The
-build passes and the current app is unchanged (the new screen isn't
-registered yet). Each stub's doc comment carries the pseudocode to
-implement.
+**Status: built.** Every module below is implemented and unit-tested
+(part of the 98 tests in `test/test_hack.ml`), and the screen is
+registered as `"collect"`. It was also checked in the running app:
+collecting a figure, an insult with strike markers, Escape back to the
+menu, and the 5th strike showing GAME OVER and closing the game by
+itself. This document was the plan; **"As built"** at the end lists
+where the build differs from it.
 
 ## The game
 
@@ -65,10 +66,9 @@ Collect.take_save_request ─► Collection.save      (after each verdict)
 Collect.wants_quit        ─► Scene.Quit           (after the final diss)
 ```
 
-## Changes needed outside the new modules
+## Changes outside the new modules (all done)
 
-These are small, but they touch existing code, so they're listed rather
-than made:
+These touched existing code:
 
 1. **`Scene.ctx` gains the figures and the data folder.** Add
    `?figures:Asterism.t array` and `~data_dir:string` to `Scene.make_ctx`,
@@ -81,7 +81,7 @@ than made:
    **F**) for free draw → `Goto "play"`, and updated instructions.
 4. **`.gitignore`:** add `data/progress.csv` (per-player progress).
 
-## Build order (each step testable on its own)
+## Build order (followed; each step has its tests)
 
 1. `Asterism.load`: test 7 figures, shapes non-empty, Orion closed,
    Cassiopeia open.
@@ -111,12 +111,35 @@ be funny, in the style of a trash-talking arcade game. The pools are
 `Roast.insults` (10 lines, can mention the score and the figure) and
 `Roast.final_disses` (4 lines). Edit those lists to change the tone.
 
-## Decisions to confirm
+## Decisions
 
-| Question | Planned default | Alternative |
+| Question | Built as | Possible change later |
 | --- | --- | --- |
-| ~~Do strikes reset after a good drawing?~~ **Decided:** no. 5 misses in total ends the game; a pass never clears strikes. | — | — |
-| How is the target chosen? | first uncollected figure, in file order | random order, or free draw (any figure the matcher finds counts) |
-| Pass mark | **50.0%** (your rule) | — |
-| Show a faint "ghost" of your best attempt while drawing (as the site does)? | not planned | add `Collect_view.ghost` |
-| Does an insult count when the stroke is too short to score? | yes, it scores 0.0% | ignore tiny accidental clicks (e.g. under 20 points) |
+| Do strikes reset after a good drawing? | **no** (decided): 5 misses in total ends the game | — |
+| How is the target chosen? | first uncollected figure, in file order | random order |
+| Pass mark | **50.0%** | — |
+| Faint "ghost" of your best attempt while drawing (as the site does)? | not built | add `Collect_view.ghost` |
+| Does a tiny stroke count as a strike? | yes, it scores 0.0% (the click that opens the mode is ignored, see below) | ignore strokes under ~20 points |
+
+## As built: differences from the plan
+
+1. **Straight lines score 0% on every figure.** Testing in the app showed
+   a flat line collecting Cassiopeia at 57.6%, because its W is shallow.
+   `Accuracy` now uses `zero = min(tolerance, gap of a straight line)` as
+   the 0% point (see `accuracy.mli`), so 50% means "halfway from a straight
+   line to the real shape". A regression test checks straight and wobbly
+   lines against all 7 figures.
+2. **Scoring uses the raw mouse points, not the smoothed stroke.** The
+   capture smoothing rounds corners, which capped a perfect Big Dipper at
+   89%, making the top tiers unreachable. The smoothed stroke is still what
+   you see on screen.
+3. **The click that opens collect mode is ignored.** The menu click is
+   still held when the mode starts and would otherwise be an instant 0%
+   strike. Pen input is ignored until the button has been up for a frame.
+4. **Escape:** raylib no longer closes the window on Escape. The menu quits
+   on Escape, How to play and the reset confirm go back, and in either game
+   Escape returns to the menu (same as M).
+5. **`tolerance = 0.6` kept**, after calibrating on simulated drawings:
+   wobble 0.10 → about 81%, wobble 0.20 → 63%, wobble 0.30 → 53%, wrong
+   figure → about 14%. Real players haven't been measured yet; it's one
+   number to change in `lib/game/accuracy.ml`.

@@ -14,7 +14,7 @@ type command =
 (** Everything the player can ask the game to do. *)
 
 val bindings : (Scene.key * command) list
-(** Key bindings: [C] clear, [S] save card, [N] story, [M] menu. *)
+(** Key bindings: [C] clear, [S] save card, [N] story, [M] or Escape: menu. *)
 
 val read : Scene.input -> command list
 (**

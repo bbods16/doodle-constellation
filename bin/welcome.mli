@@ -1,7 +1,15 @@
-(** Welcome screen (registered as ["welcome"]), and the reference
-    example of an outside scene module: it only knows {!Scene} and the
-    renderer, and reaches the game by name with [Goto "play"].
+(** The welcome page (registered as ["welcome"]): the title screen and
+    main menu. Glue only, like [Play] and [Collect_scene]:
 
-    Click, Enter or Space starts the game; [Q] quits. *)
+    {v
+    input ─Title.update─► state + outcome ─► Continue / Goto scene / Quit
+    Reset outcome ─► delete data/progress.csv ─► Title.after_reset
+    state ─Title_view.draw─► screen
+    v}
+
+    Menu: Collect the constellations (goes to ["collect"]), Free draw
+    (goes to ["play"]), How to play, Reset progress, Quit. Arrow keys or
+    W/S and Enter/Space, or the mouse; Escape quits from the main menu.
+    For a minimal example of a screen, see [docs/SCENES.md]. *)
 
 include Scene.S

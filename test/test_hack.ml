@@ -566,9 +566,408 @@ let data_dir_tests =
            | Ok p -> assert_bool p (Sys.file_exists p)
            | Error _ -> assert_failure "real catalogue not found") ]
 
+(* ---------------- collect mode ---------------- *)
+
+let figures = lazy (Asterism.load (Lazy.force catalogue) "../data/asterisms.csv")
+
+let figure name =
+  match List.find_opt (fun f -> Asterism.name f = name) (Array.to_list (Lazy.force figures)) with
+  | Some f -> f
+  | None -> failwith ("no figure " ^ name)
+
+(* A figure outline turned into a dense, moved, scaled, rotated stroke. *)
+let as_stroke ?(sim = { s = 300.; theta = 0.8; tx = 500.; ty = 350. }) shape =
+  sample_polyline 2. (apply_all sim shape)
+
+let asterism_tests =
+  "asterism"
+  >::: [ ("load" >:: fun _ ->
+           let fs = Lazy.force figures in
+           assert_equal ~printer:string_of_int 7 (Array.length fs);
+           let o = figure "Orion" and c = figure "Cassiopeia" in
+           assert_bool "orion closed" (Asterism.is_closed o);
+           assert_bool "cassiopeia open" (not (Asterism.is_closed c));
+           assert_equal 7 (Array.length (Asterism.shape o));
+           assert_equal "UMa" (Asterism.constellation (figure "Big Dipper"));
+           assert_equal 8 (Array.length (Asterism.star_indices (figure "Big Dipper"))));
+         ("unknown_star" >:: fun _ ->
+           let path = Filename.temp_file "fig" ".csv" in
+           Out_channel.with_open_text path (fun oc -> output_string oc "name,con,stars\nBad,X,1 999999\n");
+           assert_raises (Failure "Asterism.load: Bad uses unknown star id 1") (fun () ->
+               Asterism.load (Lazy.force catalogue) path)) ]
+
+let accuracy_tests =
+  "accuracy"
+  >::: [ ("perfect_trace" >:: fun _ ->
+           Array.iter
+             (fun f ->
+               let target = Asterism.shape f in
+               let s = Accuracy.score ~target (as_stroke target) in
+               assert_bool (Printf.sprintf "%s scored %s" (Asterism.name f) (Accuracy.format s)) (s > 99.))
+             (Lazy.force figures));
+         ("invariant" >:: fun _ ->
+           let target = Asterism.shape (figure "Orion") in
+           let rev a = Array.init (Array.length a) (fun i -> a.(Array.length a - 1 - i)) in
+           List.iter
+             (fun (label, stroke) ->
+               let s = Accuracy.score ~target stroke in
+               assert_bool (label ^ " scored " ^ Accuracy.format s) (s > 99.))
+             [ ("moved/scaled/rotated", as_stroke ~sim:{ s = 50.; theta = -2.; tx = 9.; ty = 999. } target);
+               ("reversed", as_stroke (rev target));
+               ("mirrored", as_stroke (mirror_y target)) ]);
+         ("line_fails_everywhere" >:: fun _ ->
+           (* regression: a flat line once collected Cassiopeia's shallow W at 57.6% *)
+           let straight = sample_polyline 2. [| p 0. 0.; p 400. 10. |] in
+           let wobbly = sample_polyline 2. [| p 0. 0.; p 100. 12.; p 200. (-6.); p 300. 10.; p 400. 0. |] in
+           Array.iter
+             (fun f ->
+               let target = Asterism.shape f in
+               List.iter
+                 (fun (label, stroke) ->
+                   let s = Accuracy.score ~target stroke in
+                   assert_bool (Printf.sprintf "%s line on %s scored %s" label (Asterism.name f) (Accuracy.format s))
+                     (s < Accuracy.pass_mark))
+                 [ ("straight", straight); ("wobbly", wobbly) ];
+               assert_feq ~eps:1e-6 ("exact line on " ^ Asterism.name f) 0. (Accuracy.score ~target straight))
+             (Lazy.force figures));
+         ("wrong_figure_fails" >:: fun _ ->
+           let s = Accuracy.score ~target:(Asterism.shape (figure "Cassiopeia"))
+               (as_stroke (Asterism.shape (figure "Orion"))) in
+           assert_bool ("orion as cassiopeia scored " ^ Accuracy.format s) (s < Accuracy.pass_mark));
+         ("empty" >:: fun _ ->
+           assert_feq "empty" 0. (Accuracy.score ~target:(Asterism.shape (figure "Leo")) [||]);
+           assert_feq "dot" 0. (Accuracy.score ~target:(Asterism.shape (figure "Leo")) [| p 1. 1.; p 1. 1. |]));
+         ("live" >:: fun _ ->
+           let target = Asterism.shape (figure "Cassiopeia") in
+           let full = as_stroke target in
+           let half = Accuracy.prefix full 0.5 in   (* exactly half the length *)
+           let s = Accuracy.live ~target half in
+           assert_bool ("half trace live " ^ Accuracy.format s) (s > 95.);
+           assert_feq "nothing yet" 0. (Accuracy.live ~target [||]));
+         ("format" >:: fun _ ->
+           assert_equal "87.3%" (Accuracy.format 87.25);
+           assert_equal "0.0%" (Accuracy.format (-3.));
+           assert_equal "100.0%" (Accuracy.format 140.);
+           assert_equal "Best: 0.0%" (Accuracy.format_best None);
+           assert_equal "Best: 91.2%" (Accuracy.format_best (Some 91.2)));
+         ("tiers" >:: fun _ ->
+           let open Accuracy in
+           assert_equal Near_perfect (tier 94.);
+           assert_equal Incredible (tier 93.99);
+           assert_equal Amazing (tier 81.);
+           assert_equal Great (tier 72.);
+           assert_equal Collected (tier 50.);
+           assert_equal Failed (tier 49.9);
+           assert_equal "Near Perfect" (tier_label Near_perfect));
+         ("colour" >:: fun _ ->
+           assert_equal (230, 60, 60) (Accuracy.colour 0.);
+           assert_equal (240, 200, 60) (Accuracy.colour 50.);
+           assert_equal (60, 220, 90) (Accuracy.colour 100.)) ]
+
+let roast_tests =
+  "roast"
+  >::: [ ("insult_fill" >:: fun _ ->
+           assert_equal "12.0% on Leo? Bold." (Roast.insult "{score} on {target}? Bold." ~score:12.04 ~target:"Leo"));
+         ("five_strikes" >:: fun _ ->
+           let rec go r k =
+             let r, v = Roast.miss r ~score:10. ~target:"Orion" in
+             match v with
+             | Roast.Insult _ when k < 5 -> go r (k + 1)
+             | Roast.Final_diss line when k = 5 -> (r, line)
+             | _ -> assert_failure (Printf.sprintf "wrong verdict on strike %d" k)
+           in
+           let r, line = go (Roast.create ()) 1 in
+           assert_bool "diss text" (String.length line > 0);
+           assert_equal 0 (Roast.strikes_left r);
+           assert_raises (Invalid_argument "Roast.miss: no strikes left") (fun () ->
+               Roast.miss r ~score:1. ~target:"Orion"));
+         ("deterministic" >:: fun _ ->
+           let line seed = snd (Roast.miss (Roast.create ~seed ()) ~score:20. ~target:"Leo") in
+           assert_equal (line 7) (line 7);
+           assert_bool "seeds differ" (line 0 <> line 1)) ]
+
+let collection_tests =
+  "collection"
+  >::: [ ("pass_mark" >:: fun _ ->
+           let c = Collection.create (Lazy.force figures) in
+           let c, r = Collection.record c ~name:"Orion" ~score:49.9 in
+           assert_bool "not collected" (not r.collected_now);
+           assert_bool "first attempt is a best" r.new_best;
+           let c, r = Collection.record c ~name:"Orion" ~score:50.0 in
+           assert_bool "collected at 50.0" r.collected_now;
+           assert_bool "collected" (Collection.is_collected c "Orion");
+           let c, r = Collection.record c ~name:"Orion" ~score:45. in
+           assert_bool "no new best" (not r.new_best);
+           assert_feq "best kept" 50. r.best;
+           assert_bool "still collected" (Collection.is_collected c "Orion");
+           assert_equal "1 / 7 collected" (Collection.progress_label c));
+         ("next_target" >:: fun _ ->
+           let c = Collection.create (Lazy.force figures) in
+           assert_equal (Some "Big Dipper") (Option.map Asterism.name (Collection.next_target c));
+           let c, _ = Collection.record c ~name:"Big Dipper" ~score:80. in
+           assert_equal (Some "Cassiopeia") (Option.map Asterism.name (Collection.next_target c));
+           let c = Array.fold_left (fun c f -> fst (Collection.record c ~name:(Asterism.name f) ~score:90.)) c
+               (Lazy.force figures) in
+           assert_bool "complete" (Collection.is_complete c);
+           assert_equal None (Collection.next_target c));
+         ("save_load" >:: fun _ ->
+           let fs = Lazy.force figures in
+           let c, _ = Collection.record (Collection.create fs) ~name:"Leo" ~score:73.456 in
+           let c, _ = Collection.record c ~name:"Orion" ~score:12.5 in
+           let path = Filename.temp_file "progress" ".csv" in
+           Collection.save path c;
+           let c' = Collection.load fs path in
+           assert_bool "leo collected" (Collection.is_collected c' "Leo");
+           assert_bool "orion not" (not (Collection.is_collected c' "Orion"));
+           assert_equal (Some 73.456) (Collection.best c' "Leo");
+           assert_equal (Some 12.5) (Collection.best c' "Orion");
+           assert_equal None (Collection.best c' "Cassiopeia");
+           assert_equal 0 (Collection.collected_count (Collection.load fs "missing.csv")));
+         ("bad_name" >:: fun _ ->
+           assert_raises (Invalid_argument "Collection.record: unknown figure Nope") (fun () ->
+               Collection.record (Collection.create (Lazy.force figures)) ~name:"Nope" ~score:1.)) ]
+
+let judge_tests =
+  let fresh () = (Collection.create (Lazy.force figures), Roast.create ()) in
+  "judge"
+  >::: [ ("verdicts" >:: fun _ ->
+           let c, r = fresh () in
+           let o = figure "Orion" in
+           let c, r, v = Judge.judge c r ~target:o ~score:63. in
+           (match v with Judge.Collected_new { tier = Accuracy.Collected; _ } -> () | _ -> assert_failure "collected");
+           assert_equal "Collected!" (Judge.headline v);
+           let c, r, v = Judge.judge c r ~target:o ~score:91. in
+           (match v with Judge.New_record _ -> () | _ -> assert_failure "record");
+           assert_equal "NEW RECORD!" (Judge.headline v);
+           let c, r, v = Judge.judge c r ~target:o ~score:75. in
+           (match v with Judge.Passed { best = 91.; tier = Accuracy.Great; _ } -> () | _ -> assert_failure "passed");
+           assert_equal "Great" (Judge.headline v);
+           let _, r, v = Judge.judge c r ~target:o ~score:20. in
+           (match v with Judge.Insulted { strikes_left = 4; _ } -> () | _ -> assert_failure "insulted");
+           assert_equal 1 (Roast.strikes r);
+           assert_feq "score_of" 20. (Judge.score_of v));
+         ("game_over" >:: fun _ ->
+           let c, r = fresh () in
+           let o = figure "Leo" in
+           let rec go c r k =
+             let c, r, v = Judge.judge c r ~target:o ~score:5. in
+             if k < 5 then go c r (k + 1) else v
+           in
+           (match go c r 1 with Judge.Game_over _ -> () | _ -> assert_failure "game over");
+           (* a miss still counts as an attempt for the best score *)
+           let c, _, _ = Judge.judge c r ~target:o ~score:30. in
+           assert_equal (Some 30.) (Collection.best c "Leo")) ]
+
+(* One frame of collect mode: apply the commands, then tick. *)
+let frame ?(dt = 1. /. 60.) t cmds = List.fold_left Collect.apply t cmds |> Collect.tick dt
+
+(* Draw [stroke] one sample per frame, then release. *)
+let draw_in t stroke =
+  let t = Array.fold_left (fun t q -> frame t [ Controls.Pen_down q ]) t stroke in
+  frame t [ Controls.Pen_up ]
+
+let collect_tests =
+  let start () = Collect.init (Collection.create (Lazy.force figures)) (Roast.create ()) in
+  let target_shape t = Asterism.shape (Option.get (Collect.target t)) in
+  "collect"
+  >::: [ ("held_click_ignored" >:: fun _ ->
+           (* the click that opened the mode is still down on the first frames *)
+           let t = frame (start ()) [ Controls.Pen_down (p 5. 5.) ] in
+           let t = frame t [ Controls.Pen_up ] in
+           assert_equal Collect.Prompt (Collect.phase t);
+           assert_equal 0 (Roast.strikes (Collect.roast t)));
+         ("collect_one" >:: fun _ ->
+           let t = frame (start ()) [] in
+           assert_equal (Some "Big Dipper") (Option.map Asterism.name (Collect.target t));
+           let t = Array.fold_left (fun t q -> frame t [ Controls.Pen_down q ]) t
+               (as_stroke (target_shape t)) in
+           assert_equal Collect.Drawing (Collect.phase t);
+           assert_bool ("live score " ^ Accuracy.format (Collect.live_score t)) (Collect.live_score t > 90.);
+           let t = frame t [ Controls.Pen_up ] in
+           (match Collect.phase t with
+           | Collect.Verdict (Judge.Collected_new _, _) -> ()
+           | _ -> assert_failure "expected Collected_new");
+           let t, save = Collect.take_save_request t in
+           assert_bool "save requested" (save <> None);
+           assert_equal None (snd (Collect.take_save_request t));
+           (* the verdict times out and the next figure is asked for *)
+           let t = frame ~dt:3. t [] in
+           assert_equal Collect.Prompt (Collect.phase t);
+           assert_equal (Some "Cassiopeia") (Option.map Asterism.name (Collect.target t)));
+         ("win" >:: fun _ ->
+           let rec play t n =
+             if n > 20 then assert_failure "never completed"
+             else match Collect.phase t with
+               | Collect.Complete -> t
+               | _ -> play (frame ~dt:3. (draw_in t (as_stroke (target_shape t))) []) (n + 1)
+           in
+           let t = play (frame (start ()) []) 0 in
+           assert_bool "complete" (Collection.is_complete (Collect.collection t));
+           assert_equal None (Collect.target t));
+         ("five_strikes_quit" >:: fun _ ->
+           let line = sample_polyline 3. [| p 0. 0.; p 300. 5. |] in
+           let rec miss t k =
+             let t = draw_in t line in
+             if k < 5 then miss (frame ~dt:3. t []) (k + 1) else t
+           in
+           let t = miss (frame (start ()) []) 1 in
+           (match Collect.phase t with
+           | Collect.Dissed (line, _) -> assert_bool "diss" (String.length line > 0)
+           | _ -> assert_failure "expected Dissed");
+           assert_bool "not yet" (not (Collect.wants_quit t));
+           (* input is ignored while dissing *)
+           let t = frame t [ Controls.Pen_down (p 1. 1.) ] in
+           let t = frame ~dt:5. t [] in
+           assert_bool "quits after the countdown" (Collect.wants_quit t));
+         ("clear" >:: fun _ ->
+           let t = frame (start ()) [] in
+           let t = frame t [ Controls.Pen_down (p 1. 1.) ] in
+           let t = frame t [ Controls.Pen_down (p 50. 1.); Controls.Clear ] in
+           assert_equal Collect.Prompt (Collect.phase t);
+           assert_equal 0 (Array.length (Collect.stroke t))) ]
+
+(* ---------------- welcome page ---------------- *)
+
+let item ?(enabled = true) label action = { Menu.label; detail = None; action; enabled }
+
+let menu_tests =
+  let m () = Menu.create [ item ~enabled:false "off" 0; item "a" 1; item "b" 2; item ~enabled:false "x" 3 ] in
+  let rects m = Menu.layout m ~width:1280 ~height:800 in
+  "menu"
+  >::: [ ("create" >:: fun _ ->
+           assert_equal 1 (Menu.selected_index (m ()));
+           assert_raises (Invalid_argument "Menu.create: no enabled item") (fun () ->
+               Menu.create [ item ~enabled:false "off" 0 ]));
+         ("keys_skip_disabled_and_wrap" >:: fun _ ->
+           let m = m () in
+           let r = rects m in
+           let down m = fst (Menu.apply m ~rects:r Menu.Down) and up m = fst (Menu.apply m ~rects:r Menu.Up) in
+           assert_equal 2 (Menu.selected_index (down m));
+           assert_equal 1 (Menu.selected_index (down (down m)));
+           assert_equal 2 (Menu.selected_index (up m));
+           assert_equal (Some 1) (snd (Menu.apply m ~rects:r Menu.Choose)));
+         ("mouse" >:: fun _ ->
+           let m = m () in
+           let r = rects m in
+           let centre i = p (r.(i).x +. (r.(i).w /. 2.)) (r.(i).y +. (r.(i).h /. 2.)) in
+           assert_equal 2 (Menu.selected_index (fst (Menu.apply m ~rects:r (Menu.Point (centre 2)))));
+           assert_equal (Some 2) (snd (Menu.apply m ~rects:r (Menu.Click (centre 2))));
+           assert_equal None (snd (Menu.apply m ~rects:r (Menu.Click (centre 0))));
+           assert_equal None (snd (Menu.apply m ~rects:r (Menu.Click (p (-5.) (-5.))))));
+         ("layout_and_hit" >:: fun _ ->
+           let r = rects (m ()) in
+           assert_equal 4 (Array.length r);
+           Array.iter (fun (q : Menu.rect) ->
+               assert_bool "inside window" (q.x >= 0. && q.y >= 0. && q.x +. q.w <= 1280. && q.y +. q.h <= 800.)) r;
+           let one = [| { Menu.x = 0.; y = 0.; w = 10.; h = 10. } |] in
+           assert_equal (Some 0) (Menu.item_at one (p 10. 10.));
+           assert_equal None (Menu.item_at one (p 10.1 5.)));
+         ("read" >:: fun _ ->
+           let base = Scene.idle ~width:800 ~height:600 in
+           assert_equal [ Menu.Down; Menu.Choose; Menu.Point (p 0. 0.) ]
+             (Menu.read { base with keys = [ Scene.Down; Scene.Enter ] });
+           assert_equal [ Menu.Point (p 3. 4.); Menu.Click (p 3. 4.) ]
+             (Menu.read { base with mouse = p 3. 4.; mouse_pressed = true })) ]
+
+let attract_tests =
+  let box = { Menu.x = 0.; y = 0.; w = 400.; h = 300. } in
+  "attract"
+  >::: [ ("empty" >:: fun _ ->
+           let a = Attract.create [||] in
+           assert_equal None (Attract.current a);
+           assert_equal 0 (Array.length (Attract.visible_path a ~box));
+           assert_equal 0 (Array.length (Attract.star_points (Attract.step 10. a) ~box)));
+         ("draws_then_moves_on" >:: fun _ ->
+           let fs = Lazy.force figures in
+           let a = Attract.create fs in
+           assert_equal 0 (Array.length (Attract.visible_path a ~box));
+           let half = Attract.step (Attract.seconds_per_figure /. 2.) a in
+           (match Attract.current half with
+           | Some (f, frac) -> assert_equal "Big Dipper" (Asterism.name f); assert_feq "half" 0.5 frac
+           | None -> assert_failure "no figure");
+           let full = Attract.step Attract.seconds_per_figure a in
+           let path = Attract.visible_path full ~box in
+           let stars = Attract.star_points full ~box in
+           assert_equal 7 (Array.length stars);
+           Array.iter (fun (q : pt) -> assert_bool "in box" (q.x >= 0. && q.x <= 400. && q.y >= 0. && q.y <= 300.)) path;
+           assert_feq "ends at last star" 0. (dist path.(Array.length path - 1) (Attract.star_points full ~box).(3)) ~eps:1e-6;
+           assert_feq "opaque" 1. (Attract.alpha full);
+           let next = Attract.step (Attract.seconds_per_figure +. Attract.hold_seconds +. 0.1) a in
+           assert_equal (Some "Cassiopeia") (Option.map (fun (f, _) -> Asterism.name f) (Attract.current next));
+           let wrapped = Attract.step (7. *. (Attract.seconds_per_figure +. Attract.hold_seconds)) a in
+           assert_equal (Some "Big Dipper") (Option.map (fun (f, _) -> Asterism.name f) (Attract.current wrapped))) ]
+
+let title_tests =
+  let s = Some { Title.collected = 3; total = 7; best_average = Some 71.4 } in
+  let fresh () = Title.init (Lazy.force figures) s in
+  let base = Scene.idle ~width:1280 ~height:800 in
+  let keys ks t = Title.update { base with keys = ks } t in
+  "title"
+  >::: [ ("main_items" >:: fun _ ->
+           let items = Title.main_items s in
+           assert_equal 5 (List.length items);
+           assert_equal (Some "3 / 7 collected - avg best 71.4%") (List.hd items).detail;
+           let none = Title.main_items None in
+           assert_bool "collect off without figures" (not (List.hd none).enabled);
+           assert_bool "reset off without progress" (not (List.nth none 3).enabled));
+         ("go_places" >:: fun _ ->
+           assert_equal Title.(Go "collect") (snd (keys [ Scene.Enter ] (fresh ())));
+           let t, _ = keys [ Scene.Down ] (fresh ()) in
+           assert_equal Title.(Go "play") (snd (keys [ Scene.Enter ] t));
+           assert_equal Title.Quit (snd (keys [ Scene.Escape ] (fresh ()))));
+         ("help" >:: fun _ ->
+           let t, _ = keys [ Scene.Down ] (fresh ()) in
+           let t, _ = keys [ Scene.Down ] t in
+           let t, o = keys [ Scene.Enter ] t in
+           assert_equal Title.Stay o;
+           assert_equal Title.Help (Title.page t);
+           let t, _ = Title.update base t in
+           assert_equal Title.Help (Title.page t);
+           let t, _ = keys [ Scene.Space ] t in
+           assert_equal Title.Main (Title.page t));
+         ("reset_flow" >:: fun _ ->
+           let to_reset t = List.fold_left (fun t _ -> fst (keys [ Scene.Down ] t)) t [ 1; 2; 3 ] in
+           let t, _ = keys [ Scene.Enter ] (to_reset (fresh ())) in
+           assert_equal Title.Confirm_reset (Title.page t);
+           assert_equal 0 (Menu.selected_index (Title.menu t));
+           let back, _ = keys [ Scene.Escape ] t in
+           assert_equal Title.Main (Title.page back);
+           let no, o = keys [ Scene.Enter ] t in
+           assert_equal Title.Stay o;
+           assert_equal Title.Main (Title.page no);
+           let t, _ = keys [ Scene.Down ] t in
+           let t, o = keys [ Scene.Enter ] t in
+           assert_equal Title.Reset o;
+           let t = Title.after_reset t in
+           assert_equal Title.Main (Title.page t);
+           (match Title.summary t with
+           | Some { collected = 0; best_average = None; _ } -> ()
+           | _ -> assert_failure "summary not cleared");
+           assert_bool "reset now disabled" (not (List.nth (Menu.items (Title.menu t)) 3).enabled));
+         ("resting_mouse" >:: fun _ ->
+           (* a mouse resting on Quit must not undo the arrow keys every frame *)
+           let t = fresh () in
+           let r = Menu.layout (Title.menu t) ~width:1280 ~height:800 in
+           let on_quit = p (r.(4).x +. 10.) (r.(4).y +. 10.) in
+           let t, _ = Title.update { base with mouse = on_quit } t in
+           assert_equal 4 (Menu.selected_index (Title.menu t));
+           let t, _ = Title.update { base with mouse = on_quit; keys = [ Scene.Up ] } t in
+           assert_equal 3 (Menu.selected_index (Title.menu t)));
+         ("help_text" >:: fun _ ->
+           let all = String.concat " " Title.help_lines in
+           let has sub =
+             let n = String.length all and m = String.length sub in
+             let rec go i = i + m <= n && (String.sub all i m = sub || go (i + 1)) in
+             go 0
+           in
+           assert_bool "pass mark" (has "50.0%");
+           assert_bool "strikes" (has "5 strikes")) ]
+
 let () =
   run_test_tt_main
     ("doodle"
     >::: [ geom_tests; simplify_tests; capture_tests; catalogue_tests; index_tests;
            matching_tests; visibility_tests; morph_tests; narrate_tests; engine_tests;
-           scene_tests; controls_tests; game_tests; data_dir_tests ])
+           scene_tests; controls_tests; game_tests; data_dir_tests; asterism_tests;
+           accuracy_tests; roast_tests; collection_tests; judge_tests; collect_tests;
+           menu_tests; attract_tests; title_tests ])

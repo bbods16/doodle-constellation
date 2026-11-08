@@ -1,6 +1,4 @@
-(* PLANNED (collect mode): stub implementation. The interface in
-   roast.mli is the contract; replace each [todo] with the real code.
-   See docs/COLLECT_PLAN.md. *)
+(* Insults, strikes and the final diss. See roast.mli for the contract. *)
 
 type t = { strikes : int; seed : int }
 type verdict = Insult of string | Final_diss of string
@@ -25,8 +23,6 @@ let final_disses =
     "Five misses. The universe is expanding just to get away from you. Bye.";
     "Strike five. Go draw on a fogged-up window, the sky is closed to you." ]
 
-let todo what = failwith ("Roast." ^ what ^ ": not implemented yet (see roast.mli)")
-
 (**
    [create ?seed ()] starts with no strikes.
    Requires: nothing
@@ -37,7 +33,7 @@ let todo what = failwith ("Roast." ^ what ^ ": not implemented yet (see roast.ml
    Pseudocode:
      return { strikes = 0; seed }
 *)
-let create ?(seed = 0) () = { strikes = 0; seed }
+let create ?(seed = 0) () = { strikes = 0; seed = abs seed }
 
 (**
    [strikes r] is the strike count.
@@ -64,6 +60,32 @@ let strikes r = r.strikes
 let strikes_left r = max_strikes - r.strikes
 
 (**
+   [replace_all s ~sub ~by] replaces every occurrence of [sub] in [s].
+   Requires: [sub] non-empty
+   Returns: the new string
+   Raises: nothing
+   Example: replace_all "a{x}b{x}" ~sub:"{x}" ~by:"1" = "a1b1"
+   Complexity: O(|s| * |sub|)
+   Pseudocode:
+     scan left to right; at each match emit [by] and skip [sub], else copy one char
+*)
+let replace_all s ~sub ~by =
+  let n = String.length s and m = String.length sub in
+  let b = Buffer.create n in
+  let i = ref 0 in
+  while !i < n do
+    if !i + m <= n && String.sub s !i m = sub then begin
+      Buffer.add_string b by;
+      i := !i + m
+    end
+    else begin
+      Buffer.add_char b s.[!i];
+      incr i
+    end
+  done;
+  Buffer.contents b
+
+(**
    [insult line ~score ~target] fills placeholders.
    Requires: nothing
    Returns: the finished line
@@ -74,7 +96,8 @@ let strikes_left r = max_strikes - r.strikes
      replace every "{score}" with Accuracy.format score
      replace every "{target}" with target
 *)
-let insult (_ : string) ~score:(_ : float) ~target:(_ : string) : string = todo "insult"
+let insult line ~score ~target =
+  replace_all (replace_all line ~sub:"{score}" ~by:(Accuracy.format score)) ~sub:"{target}" ~by:target
 
 (**
    [miss r ~score ~target] records a strike and picks a line.
@@ -86,9 +109,17 @@ let insult (_ : string) ~score:(_ : float) ~target:(_ : string) : string = todo 
    Pseudocode:
      if r.strikes >= max_strikes then fail
      n <- r.strikes + 1
-     pick <- (seed + n) mod (length of the pool) (deterministic order)
-     if n = max_strikes then Final_diss (insult final_disses.(pick) ...)
-     else Insult (insult insults.(pick) ...)
+     pick <- (seed + 3 n) mod (length of the pool) (deterministic, varied)
+     if n = max_strikes then Final_diss (filled final line)
+     else Insult (filled insult line)
      return ({ r with strikes = n }, verdict)
 *)
-let miss (_ : t) ~score:(_ : float) ~target:(_ : string) : t * verdict = todo "miss"
+let miss r ~score ~target =
+  if r.strikes >= max_strikes then invalid_arg "Roast.miss: no strikes left";
+  let n = r.strikes + 1 in
+  let pick pool = List.nth pool ((r.seed + (3 * n)) mod List.length pool) in
+  let verdict =
+    if n = max_strikes then Final_diss (insult (pick final_disses) ~score ~target)
+    else Insult (insult (pick insults) ~score ~target)
+  in
+  ({ r with strikes = n }, verdict)

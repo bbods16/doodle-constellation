@@ -1,8 +1,7 @@
 (** Collection: which constellation figures the player has collected, and
     their best score for each.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     A figure is collected the first time it scores at least
     {!Accuracy.pass_mark}. Best scores keep improving after that (the

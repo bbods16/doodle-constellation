@@ -1,8 +1,7 @@
 (** Accuracy: how closely a drawing matches a constellation figure, as a
     percentage in the style of drawtheperfectcircle.com.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     {2 Display, matching the reference site}
     - One decimal place and a percent sign: ["87.3%"], from ["0.0%"] to
@@ -23,11 +22,16 @@
     starting star for closed figures, and the mirror image. With [r] the
     smallest RMS gap left after alignment:
 
-    {v score = 100 * max 0 (1 - r / tolerance) v}
+    {v score = 100 * max 0 (1 - r / zero)
+       zero  = min tolerance (gap left when a straight line is aligned the same way) v}
 
-    So a perfect trace scores 100.0%, and a gap of [tolerance] (in units
-    of the figure's RMS radius) or more scores 0.0%. Position, size and
-    rotation never matter. *)
+    So a perfect trace scores 100.0%, and a gap of [zero] (in units of
+    the figure's RMS radius) or more scores 0.0%. For most figures
+    [zero = tolerance]. For a shallow figure such as Cassiopeia's W, a
+    plain straight line already comes close, so [zero] shrinks to that
+    line's gap: a straight line scores 0.0% on every figure, and 50%
+    means "halfway from a straight line to the real shape". Position,
+    size and rotation never matter. *)
 
 type tier =
   | Near_perfect  (** 94% and up *)
@@ -42,8 +46,10 @@ val samples : int
 (** Points each shape is resampled to before comparing. [64]. *)
 
 val tolerance : float
-(** RMS gap, in figure radii, that scores 0%. [0.6]. To be tuned so an
-    average careful drawing lands in the site's typical 50–60% band. *)
+(** RMS gap, in figure radii, that scores 0% (unless a straight line
+    comes closer; see the scoring rule above). [0.6], calibrated on
+    simulated drawings: rough-but-right drawings score in the 50s–60s,
+    like the reference site's average, and wrong figures around 15%. *)
 
 val pass_mark : float
 (** Lowest score that collects a figure. [50.0]. *)
@@ -71,6 +77,18 @@ val live : target:Geom.pt array -> Geom.pt array -> float
    Raises: nothing
    Example: live ~target (first half of a perfect trace) = 100.
    Complexity: same as {!score}
+*)
+
+val prefix : Geom.pt array -> float -> Geom.pt array
+(**
+   [prefix pts frac] is the start of the polyline [pts] covering the
+   fraction [frac] of its length (used by {!live}, and by the welcome
+   page's animation to draw a figure part-way).
+   Requires: [pts] has at least 1 point; [0. <= frac <= 1.]
+   Returns: the points up to that length, the last one interpolated
+   Raises: nothing
+   Example: prefix [|{x=0.;y=0.}; {x=4.;y=0.}|] 0.5 = [|{x=0.;y=0.}; {x=2.;y=0.}|]
+   Complexity: O(n)
 *)
 
 val format : float -> string

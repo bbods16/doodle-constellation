@@ -149,7 +149,8 @@ let help () =
     | Scene.Letter ch -> Printf.sprintf "%c %s" (Char.uppercase_ascii ch) (word c)
     | _ -> word c
   in
-  let text = String.concat "   " (List.map entry Controls.bindings) in
+  let letters = List.filter (function Scene.Letter _, _ -> true | _ -> false) Controls.bindings in
+  let text = String.concat "   " (List.map entry letters) in
   right_aligned text (get_screen_height () - 30) 16 Color.gray
 
 (**

@@ -1,6 +1,4 @@
-(* PLANNED (collect mode): stub implementation. The interface in
-   judge.mli is the contract; replace each [todo] with the real code.
-   See docs/COLLECT_PLAN.md. *)
+(* One score to one verdict. See judge.mli for the contract. *)
 
 type verdict =
   | Collected_new of { score : float; tier : Accuracy.tier }
@@ -8,8 +6,6 @@ type verdict =
   | Passed of { score : float; tier : Accuracy.tier; best : float }
   | Insulted of { score : float; line : string; strikes_left : int }
   | Game_over of { score : float; line : string }
-
-let todo what = failwith ("Judge." ^ what ^ ": not implemented yet (see judge.mli)")
 
 (**
    [judge c r ~target ~score] applies the rules.
@@ -34,9 +30,28 @@ let todo what = failwith ("Judge." ^ what ^ ": not implemented yet (see judge.ml
             | Final_diss line -> Game_over { score; line }
        (c, r, v)
 *)
-let judge (_ : Collection.t) (_ : Roast.t) ~target:(_ : Asterism.t) ~score:(_ : float) :
-    Collection.t * Roast.t * verdict =
-  todo "judge"
+let judge c r ~target ~score =
+  let name = Asterism.name target in
+  if Roast.strikes_left r <= 0 then invalid_arg "Judge.judge: no strikes left";
+  let c, res = Collection.record c ~name ~score in
+  if score >= Accuracy.pass_mark then begin
+    let tier = Accuracy.tier score in
+    let v =
+      if res.collected_now then Collected_new { score; tier }
+      else if res.new_best then New_record { score; tier }
+      else Passed { score; tier; best = res.best }
+    in
+    (c, r, v)
+  end
+  else begin
+    let r, rv = Roast.miss r ~score ~target:name in
+    let v =
+      match rv with
+      | Roast.Insult line -> Insulted { score; line; strikes_left = Roast.strikes_left r }
+      | Roast.Final_diss line -> Game_over { score; line }
+    in
+    (c, r, v)
+  end
 
 (**
    [headline v] is the verdict's big line.

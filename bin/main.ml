@@ -94,21 +94,26 @@ let catalogue_path given =
      (lat, lon), given <- parse_args argv
      path <- catalogue_path given
      stars <- Catalogue.load path ; index <- Index.build stars
-     engine <- Engine.load (engine_weights.txt next to the catalogue),
-               or None when missing or malformed
-     return Scene.make_ctx ~stars ~index ?engine ~lat ~lon ()
+     dir <- folder of the catalogue
+     engine <- Engine.load (dir/engine_weights.txt), or None when missing or malformed
+     figures <- Asterism.load stars (dir/asterisms.csv), or [||] when missing or malformed
+                (collect mode is then disabled on the menu)
+     return Scene.make_ctx ~stars ~index ?engine ~figures ~data_dir:dir ~lat ~lon ()
 *)
 let load_ctx argv =
   let (lat, lon), given = parse_args argv in
   let path = catalogue_path given in
+  let dir = Filename.dirname path in
   let stars = Catalogue.load path in
-  let weights = Filename.concat (Filename.dirname path) "engine_weights.txt" in
-  let engine =
-    if Sys.file_exists weights then (try Some (Engine.load weights) with Failure _ -> None) else None
+  let optional file load =
+    let f = Filename.concat dir file in
+    if Sys.file_exists f then (try Some (load f) with Failure _ | Sys_error _ -> None) else None
   in
-  Scene.make_ctx ~stars ~index:(Index.build stars) ?engine ~lat ~lon ()
+  let engine = optional "engine_weights.txt" Engine.load in
+  let figures = Option.value ~default:[||] (optional "asterisms.csv" (Asterism.load stars)) in
+  Scene.make_ctx ~stars ~index:(Index.build stars) ?engine ~figures ~data_dir:dir ~lat ~lon ()
 
 (* Every screen of the app. Order does not matter; names must be unique. *)
-let scenes : (module Scene.S) list = [ (module Welcome); (module Play) ]
+let scenes : (module Scene.S) list = [ (module Welcome); (module Play); (module Collect_scene) ]
 
 let () = App.run App.default_config (load_ctx Sys.argv) (Scene.registry scenes) ~first:"welcome"

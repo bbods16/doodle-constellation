@@ -20,7 +20,8 @@ screen; it only runs whatever scene is current.
 | `lib/game/scene.ml` | The `Scene.S` interface, input and context types, registry and `step`. Pure OCaml, no raylib, unit-tested. |
 | `bin/app.ml` | The loop: opens the window, turns raylib input into `Scene.input`, steps the current scene, clears, draws, applies effects. |
 | `bin/main.ml` | Loads shared resources into `Scene.ctx` and lists the scenes. |
-| `bin/welcome.ml` | The welcome screen, a minimal example scene. |
+| `bin/welcome.ml` | The welcome page: glue over `Title` (rules) and `Title_view` (drawing). For a minimal scene, see the credits example below. |
+| `bin/collect_scene.ml` | Collect mode: glue over `Collect` (rules) and `Collect_view` (drawing). |
 | `bin/play.ml` | The drawing game scene: about 20 lines of glue, shown below. |
 | `lib/game/controls.ml` | Raw input → `Controls.command` list. The only place key bindings live. Pure, tested. |
 | `lib/game/game.ml` | The game's rules: one small function per command (`pen_down`, `pen_up` → `recognise` / `match_stroke` / `begin_morph`, `tick`, `clear`, `ask_story`), each delegating to the matching library module. Pure, tested. |
@@ -106,6 +107,7 @@ any other scene's `update`.
   drawn. New effect kinds go in `Scene.effect` and `App.apply_effect`.
 - **Keys:** scenes see `Scene.key` values (`Enter`, `Space`, `Escape`,
   `Backspace`, `Tab`, arrows, `Letter 'a'..'z'`, `Digit 0..9`). To expose
-  another raylib key, extend `Scene.key` and `App.key_map`. Escape also
-  closes the window (raylib's default exit key).
+  another raylib key, extend `Scene.key` and `App.key_map`. Escape is
+  not a raylib exit key here: each screen decides what it does (the menu
+  quits, the games go back to the menu).
 - **Starting screen:** `~first:"welcome"` in `main.ml`.

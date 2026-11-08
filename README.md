@@ -1,8 +1,15 @@
 # Doodle Constellation
 
-Draw a shape with the mouse; the app finds where that shape sits in the
-real night sky, morphs your drawing onto the stars, and tells you when
-and where to look for it tonight.
+Two ways to play:
+
+- **Collect the constellations:** the game names a constellation, you
+  draw it from memory, and a live percentage scores your drawing (in the
+  style of drawtheperfectcircle.com). 50% or more collects it. Under 50%
+  earns an insult and a strike; 5 strikes and the game closes. Collect
+  all 7 to win; progress and best scores are saved.
+- **Free draw:** draw any shape and the app finds where it sits in the
+  real night sky, morphs your drawing onto the stars, and tells you when
+  and where to look for it tonight.
 
 Two independent recognisers run on every stroke:
 
@@ -27,11 +34,11 @@ library is split into layers, each with one interface file.
 | Path | What it is |
 | --- | --- |
 | `lib/core/` | Layer 1: geometry (`Geom`, `Skyvec`) |
-| `lib/sky/` | Layer 2: star catalogue, visibility, data-folder lookup (`Catalogue`, `Visibility`, `Data_dir`); planned: `Asterism` |
+| `lib/sky/` | Layer 2: star catalogue, visibility, data-folder lookup, collectible figures (`Catalogue`, `Visibility`, `Data_dir`, `Asterism`) |
 | `lib/matching/` | Layer 3: stroke → star pattern (`Capture`, `Simplify`, `Index`, `Candidates`, `Fitter`) |
 | `lib/recognition/` | Layer 3b: trained recognition engine (`Engine`) |
-| `lib/game/` | Layer 4: screen framework and game rules (`Scene`, `Controls`, `Game`, `Projection`, `Morph`, `Narrate`); planned: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`, `Menu`, `Title`, `Attract` |
-| `bin/` | Layer 5: raylib app (`App` loop, `Welcome` and `Play` screens, `Play_view`, `Sky` renderer, `Main`); planned: `Collect_scene`, `Collect_view`, `Title_view` |
+| `lib/game/` | Layer 4: screen framework (`Scene`, `Controls`), free draw (`Game`, `Projection`, `Morph`, `Narrate`), collect mode (`Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`), welcome page (`Menu`, `Title`, `Attract`) |
+| `bin/` | Layer 5: raylib app (`App` loop, screens `Welcome` + `Title_view`, `Play` + `Play_view`, `Collect_scene` + `Collect_view`, `Sky` renderer, `Main`) |
 | `test/` | OUnit2 tests, including end-to-end matches and an OCaml-vs-PyTorch agreement test for the engine |
 | `engine/train.py` | Synthetic data generator, transformer training and weight export |
 | `data/stars.csv` | Sample bright-star catalogue (48 stars; coordinates entered by hand, approximate) |
@@ -40,12 +47,8 @@ library is split into layers, each with one interface file.
 | `proofs/` | Lean 4 + Mathlib proofs |
 | `docs/PROOFS.md` | Every theorem explained in paragraphs, mapped to the OCaml code |
 | `docs/SCENES.md` | How to add a screen |
-| `docs/COLLECT_PLAN.md` | Plan for collect mode (draw each constellation, live %, insults, 5 strikes) |
-| `docs/WELCOME_PLAN.md` | Plan for the new welcome page (menu, how to play, reset, animation) |
-
-"Planned" modules are designed and compile, but their functions are
-stubs (`not implemented yet`) and nothing calls them yet; see the plan
-docs.
+| `docs/COLLECT_PLAN.md` | Collect mode design: scoring, verdicts, insults, strikes |
+| `docs/WELCOME_PLAN.md` | Welcome page design: menu, how to play, reset, animation |
 
 Every OCaml function is documented with the project template
 (`[name args] is…`, Requires, Returns, Raises, Example, Complexity), and
@@ -77,10 +80,15 @@ file (`hack path/to/stars.csv`) or set `DOODLE_DATA` to the folder that
 contains `stars.csv`. If nothing is found, it prints every place it
 looked.
 
-The app opens on a welcome screen; click or press Enter to start. In the
-game, drag with the left mouse button to draw, **C** clears, **S** saves a
-share card, **N** asks for an invented story (needs `ANTHROPIC_API_KEY`
-and `curl`), and **M** returns to the welcome screen.
+The app opens on the welcome menu (arrow keys or W/S and Enter, or the
+mouse): **Collect the constellations**, **Free draw**, **How to play**,
+**Reset progress**, **Quit**. Escape quits from the menu.
+
+In both games, drag with the left mouse button to draw, **C** clears,
+**S** saves a share card, and **M** or **Escape** returns to the menu. In
+free draw, **N** asks for an invented story (needs `ANTHROPIC_API_KEY`
+and `curl`). Collect-mode progress is saved to `data/progress.csv` (not
+committed; Reset progress deletes it).
 
 ## Retrain the engine
 

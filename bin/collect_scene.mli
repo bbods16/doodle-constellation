@@ -1,8 +1,6 @@
-(** The collect mode as a screen (to be registered as ["collect"]).
+(** The collect mode as a screen (registered as ["collect"]).
 
-    PLANNED (collect mode) — interface only; the implementation is a stub
-    and the screen is not registered in [main.ml] yet.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     Glue only, like [Play]:
     {v

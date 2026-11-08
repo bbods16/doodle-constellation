@@ -1,7 +1,6 @@
 (** Asterism: the constellation figures the player can collect.
 
-    PLANNED (collect mode) — interface only; the implementation is a stub.
-    See [docs/COLLECT_PLAN.md].
+    Design notes: [docs/COLLECT_PLAN.md].
 
     One figure per row of [data/asterisms.csv] ([name,con,stars]), where
     [stars] is the HR ids of the stars in drawing order. A figure drawn
