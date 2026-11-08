@@ -4,9 +4,11 @@ import socket
 import sys
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
+import numpy as np
 from flask import Flask, jsonify, request, send_from_directory
 from PIL import Image
 
@@ -14,7 +16,10 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "model"))
 import constellation_cnn as cnn  # noqa: E402
 
-MAX_STRIKES = 5
+ROUNDS = 10
+# >1 softens the model's confidence; tested 1.5-3 and it only lowered good drawings' scores without giving wrong ones credit
+SCORE_TEMPERATURE = 1.0
+DRAWINGS_DIR = HERE / "drawings"
 PORT = 8000
 
 app = Flask(__name__, static_folder=str(HERE / "static"), static_url_path="/static")
@@ -24,13 +29,12 @@ app = Flask(__name__, static_folder=str(HERE / "static"), static_url_path="/stat
 class Game:
     deck: list[str]
     index: int = 0
-    score: int = 0
-    strikes: int = 0
+    points: int = 0
     history: list[dict] = field(default_factory=list)
 
     @property
     def over(self) -> bool:
-        return self.strikes >= MAX_STRIKES or self.index >= len(self.deck)
+        return self.index >= len(self.deck)
 
     @property
     def target(self) -> str | None:
@@ -38,6 +42,10 @@ class Game:
 
 
 GAMES: dict[str, Game] = {}
+
+
+def short(name: str) -> str:
+    return name.split(" – ")[0]
 
 
 def preview(name: str) -> dict:
@@ -52,22 +60,40 @@ def preview(name: str) -> dict:
     return {"name": name, "stars": stars, "edges": graph["edges"]}
 
 
+def judge(img: Image.Image, target: str) -> dict:
+    model, meta = cnn._load()
+    probs = model(cnn.preprocess(img, meta["size"])[None], training=False).numpy()
+    best, conf, accepted = cnn.decide(probs, meta["threshold"])
+    constellations = probs[0, :-1]
+    soft = constellations ** (1 / SCORE_TEMPERATURE)
+    soft /= soft.sum()
+    top = np.argsort(soft)[::-1][:3]
+    return {
+        "target_confidence": float(soft[meta["classes"].index(target)]),
+        "predicted": meta["classes"][int(best[0])] if accepted[0] else cnn.UNKNOWN,
+        "top3": [(meta["classes"][k], round(float(soft[k]), 4)) for k in top],
+    }
+
+
 def state(game_id: str, game: Game) -> dict:
     return {
         "game_id": game_id,
-        "score": game.score,
-        "strikes": game.strikes,
-        "max_strikes": MAX_STRIKES,
-        "remaining": len(game.deck) - game.index,
-        "total": len(game.deck),
+        "points": game.points,
+        "round": min(game.index + 1, len(game.deck)),
+        "rounds": len(game.deck),
         "game_over": game.over,
         "target": preview(game.target) if game.target else None,
         "history": game.history if game.over else [],
     }
 
 
-def decode(data_url: str) -> Image.Image:
-    return Image.open(BytesIO(base64.b64decode(data_url.split(",", 1)[-1])))
+def save_drawing(img: Image.Image, target: str, points: int) -> Path:
+    # same layout constellation_cnn.py evaluate reads: <folder>/<constellation>/<drawing>.png
+    folder = DRAWINGS_DIR / short(target)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{datetime.now():%Y%m%d-%H%M%S-%f}_{points}.png"
+    img.save(path)
+    return path
 
 
 @app.get("/")
@@ -77,10 +103,8 @@ def index():
 
 @app.post("/api/new")
 def new_game():
-    deck = list(cnn.lines()["train"])
-    random.shuffle(deck)
     game_id = uuid.uuid4().hex
-    GAMES[game_id] = Game(deck)
+    GAMES[game_id] = Game(random.sample(list(cnn.lines()["train"]), ROUNDS))
     return jsonify(state(game_id, GAMES[game_id]))
 
 
@@ -93,7 +117,7 @@ def submit():
     if game.over:
         return jsonify(error="game is over"), 409
     try:
-        img = decode(body.get("image", ""))
+        img = Image.open(BytesIO(base64.b64decode(body.get("image", "").split(",", 1)[-1])))
         img.load()
     except Exception:
         return jsonify(error="could not read the drawing"), 400
@@ -101,26 +125,14 @@ def submit():
     if cnn.preprocess(img).max() == 0:
         return jsonify(error="draw something first"), 400
 
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    result = cnn.predict_constellation(buf)
     target = game.target
-    correct = result["name"] == target
-    if correct:
-        game.score += 1
-    else:
-        game.strikes += 1
-    game.history.append({"target": target, "predicted": result["name"], "correct": correct})
+    result = judge(img, target)
+    earned = round(100 * result["target_confidence"])
+    save_drawing(img, target, earned)
+    game.points += earned
+    game.history.append({"target": target, "points": earned, "predicted": result["predicted"]})
     game.index += 1
-    return jsonify({
-        "correct": correct,
-        "answer": target,
-        "predicted": result["name"],
-        "confidence": result["confidence"],
-        "top3": result["top3"],
-        **state(body["game_id"], game),
-    })
+    return jsonify({"answer": target, "points_earned": earned, **result, **state(body["game_id"], game)})
 
 
 def lan_address() -> str:
@@ -134,8 +146,8 @@ def lan_address() -> str:
 
 if __name__ == "__main__":
     # load the model now so the first submit isn't slow
-    cnn.predict_constellation(BytesIO(base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==")))
+    cnn._load()
     print(f"play on this computer: http://localhost:{PORT}")
     print(f"play on the ipad (same wifi): http://{lan_address()}:{PORT}")
+    print(f"drawings are saved to {DRAWINGS_DIR}")
     app.run(host="0.0.0.0", port=PORT, threaded=False)

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Constellation Strike</title>
+  <title>Constellation Sketch</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -14,9 +14,8 @@
       <span id="target-name">—</span>
     </div>
     <div class="stats">
-      <div><span class="label">Score</span> <span id="score">0</span></div>
-      <div><span class="label">Left</span> <span id="remaining">88</span></div>
-      <div id="strikes" aria-label="strikes"></div>
+      <div><span class="label">Round</span> <span id="round">1</span> / <span id="rounds">10</span></div>
+      <div><span class="label">Points</span> <span id="points">0</span></div>
     </div>
   </header>
 
@@ -27,22 +26,23 @@
     <div id="preview-caption" class="caption hidden">
       <div id="preview-name"></div>
       <div>Memorise the shape — drawing starts in <span id="countdown">4</span>s</div>
+      <div class="tip">Tip: connect the stars with straight lines</div>
       <button id="skip-preview" class="small">I'm ready</button>
     </div>
 
     <div id="banner" class="hidden"></div>
 
     <section id="start" class="overlay">
-      <h1>Constellation Strike</h1>
-      <p>Draw the constellation you're shown using lines only.<br>
-        Get it right for a point. Wrong, or the judge isn't sure, is a strike.<br>
-        Five strikes and the game ends. Can you get all 88?</p>
+      <h1>Constellation Sketch</h1>
+      <p>10 rounds. Each round you're shown a constellation — draw it with lines only.<br>
+        The judge scores you by how sure it is that your drawing is that constellation:<br>
+        35% sure = 35 points. The best possible game is 1000.</p>
       <button id="start-btn">Start</button>
     </section>
 
     <section id="gameover" class="overlay hidden">
       <h1>Game over</h1>
-      <p class="final">Score: <span id="final-score">0</span> / <span id="final-total">88</span></p>
+      <p class="final">Score: <span id="final-score">0</span> / <span id="final-total">1000</span></p>
       <ul id="history"></ul>
       <button id="again-btn">Play again</button>
     </section>

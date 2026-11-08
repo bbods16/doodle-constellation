@@ -105,16 +105,13 @@ function setMode(next) {
   $("erase-btn").classList.toggle("active", mode === "erase");
 }
 
+function grade(points) {
+  return points >= 70 ? "good" : points >= 30 ? "okay" : "bad";
+}
+
 function renderHud() {
-  $("score").textContent = game.score;
-  $("remaining").textContent = game.remaining;
-  const strikes = $("strikes");
-  strikes.innerHTML = "";
-  for (let i = 0; i < game.max_strikes; i++) {
-    const dot = document.createElement("span");
-    dot.className = "strike" + (i < game.strikes ? " used" : "");
-    strikes.appendChild(dot);
-  }
+  $("points").textContent = game.points;
+  $("rounds").textContent = game.rounds;
 }
 
 function setLocked(value) {
@@ -161,6 +158,7 @@ function showTarget() {
   clearBoard();
   setMode("draw");
   renderHud();
+  $("round").textContent = game.round;
   $("target-name").textContent = game.target.name;
   setLocked(true);
   drawPreview(game.target);
@@ -178,24 +176,23 @@ function showTarget() {
 
 function showBanner(result) {
   const banner = $("banner");
-  const pct = Math.round(result.confidence * 100);
-  const guess = result.predicted === "unknown" ? "nothing it recognised" : result.predicted;
-  banner.className = result.correct ? "good" : "bad";
-  banner.innerHTML = result.correct
-    ? `✓ Correct! ${result.answer} <div class="detail">judge confidence ${pct}%</div>`
-    : `✗ Strike — the judge saw ${guess}` +
-      `<div class="detail">top guesses: ${result.top3.map(([n, p]) => `${n.split(" – ")[0]} ${Math.round(p * 100)}%`).join(", ")}</div>`;
+  const name = result.answer.split(" – ")[0];
+  banner.className = grade(result.points_earned);
+  banner.innerHTML =
+    `+${result.points_earned} points — the judge was ${result.points_earned}% sure this is ${name}` +
+    `<div class="detail">it thought: ${result.top3.map(([n, p]) => `${n.split(" – ")[0]} ${Math.round(p * 100)}%`).join(", ")}</div>`;
 }
 
 function showGameOver() {
-  $("final-score").textContent = game.score;
-  $("final-total").textContent = game.total;
+  $("final-score").textContent = game.points;
+  $("final-total").textContent = game.rounds * 100;
   const list = $("history");
   list.innerHTML = "";
   for (const h of game.history) {
     const li = document.createElement("li");
-    li.className = h.correct ? "hit" : "miss";
-    li.textContent = h.target.split(" – ")[0];
+    li.className = grade(h.points);
+    li.innerHTML = `<span></span><span class="pts">${h.points}</span>`;
+    li.firstChild.textContent = h.target.split(" – ")[0];
     list.appendChild(li);
   }
   $("gameover").classList.remove("hidden");

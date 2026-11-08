@@ -19,16 +19,18 @@ The geometry the matcher and engine depend on is proved in **Lean 4 with
 Mathlib** (`proofs/`) and explained in prose in
 [docs/PROOFS.md](docs/PROOFS.md).
 
-## CNN strike game (`game/`)
+## Constellation Sketch (`game/`)
 
 A browser game built on a CNN that recognises line-only constellation drawings.
-You get a random constellation (all 88, no repeats) and its shape for a few
-seconds, then draw it with lines only, using Apple Pencil, a finger or a mouse.
-**Submit** sends a screenshot of the canvas to the model:
+Each of **10 rounds** shows a random constellation and its shape for a few
+seconds; then you draw it with lines only, using Apple Pencil, a finger or a mouse.
+**Submit** sends a screenshot of the canvas to the model, and you score **the
+model's confidence that your drawing is that constellation**: 35% sure is
+35 points. The best possible game is 1000.
 
-- the model names the right constellation: **+1 point**
-- it names a different one, or isn't confident (`unknown`): **strike**
-- **5 strikes**, or all 88 played: game over. Your score is the number guessed correctly.
+Every submitted drawing is saved to `game/drawings/<constellation>/` (git-ignored),
+so the model can be measured on, and later retrained with, real drawings:
+`python ../CNN/constellation_cnn.py evaluate game/drawings`.
 
 ```bash
 uv venv --python 3.12 .venv-game

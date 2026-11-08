@@ -56,19 +56,7 @@ body {
   font-size: 1.1rem;
 }
 
-#strikes {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.strike {
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  border: 2px solid var(--bad);
-}
-
-.strike.used { background: var(--bad); }
+.tip { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 
 #stage {
   position: relative;
@@ -124,6 +112,7 @@ body {
 
 #banner.good { border: 2px solid var(--good); }
 #banner.bad { border: 2px solid var(--bad); }
+#banner.okay { border: 2px solid var(--gold); }
 #banner .detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 
 .overlay {
@@ -149,13 +138,16 @@ body {
   margin: 0 0 1.5rem;
   max-height: 40vh;
   overflow-y: auto;
-  columns: 2;
+  min-width: 18rem;
   text-align: left;
   font-size: 0.9rem;
 }
 
-#history .hit::before { content: "✓ "; color: var(--good); }
-#history .miss::before { content: "✗ "; color: var(--bad); }
+#history li { display: flex; justify-content: space-between; gap: 1.5rem; }
+#history .pts { font-variant-numeric: tabular-nums; font-weight: 600; }
+#history .good .pts { color: var(--good); }
+#history .okay .pts { color: var(--gold); }
+#history .bad .pts { color: var(--bad); }
 
 button {
   font: inherit;
