@@ -11,3 +11,7 @@ __pycache__/
 
 # App output
 doodle_card.png
+
+# Python envs
+.venv*/
+.pytest_cache/
