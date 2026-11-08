@@ -1,3 +1,14 @@
+(**
+   File: welcome.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Welcome module: the welcome screen glue - Title
+                (rules) + Title_view (drawing) + the saved progress file.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** The welcome page (registered as ["welcome"]): the title screen and
     main menu. Glue only, like [Play] and [Collect_scene]:
 

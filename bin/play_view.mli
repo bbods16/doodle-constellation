@@ -1,3 +1,14 @@
+(**
+   File: play_view.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Play_view module: draws the free-draw game, one
+                function per screen element.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** Play_view: draws a {!Game.t}, one small function per layer.
 
     {!draw} paints the layers back to front; each layer reads the game

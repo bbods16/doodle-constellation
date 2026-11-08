@@ -1,3 +1,15 @@
+(**
+   File: collect_view.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Collect_view module: draws collect mode - target, big
+                live percentage, verdict, strikes, collection shelf, game-over and win
+                screens.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** Collect_view: draws collect mode, one function per element, in the
     style of drawtheperfectcircle.com.
 
@@ -88,7 +100,8 @@ val headline : Collect.t -> unit
 (**
    [headline t] draws the verdict line during [Verdict]:
    ["Collected!"], ["NEW RECORD!"], the tier label, or the insult with
-   ["k strikes left"] ({!Judge.headline}).
+   ["k strikes left"] and "Press Enter to continue" ({!Judge.headline};
+   an insult stays until Enter).
    Requires: inside the drawing block
    Returns: unit
    Raises: nothing
@@ -118,21 +131,22 @@ val shelf : Collect.t -> unit
    Complexity: O(n)
 *)
 
-val diss_screen : string -> float -> unit
+val diss_screen : string -> unit
 (**
-   [diss_screen line seconds_left] draws the final diss full screen, with
-   a closing countdown.
+   [diss_screen line] draws the final diss full screen, with a pulsing
+   "Press Enter to close the game" (the game ends only on Enter).
    Requires: inside the drawing block
    Returns: unit
    Raises: nothing
-   Example: diss_screen "Five strikes. ..." 3.2 shows "Closing in 4..."
+   Example: diss_screen "Five strikes. ..." shows GAME OVER, the line and the prompt
    Complexity: O(L)
 *)
 
 val complete_screen : Collect.t -> unit
 (**
    [complete_screen t] draws the win screen: every figure with its best
-   score, and the average.
+   score, the average, and ["Press Enter to open your cases"] (Enter
+   opens the case screen; M / Esc go back to the menu).
    Requires: inside the drawing block
    Returns: unit
    Raises: nothing

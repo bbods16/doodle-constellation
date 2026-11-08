@@ -1,3 +1,17 @@
+(**
+   File: game.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Game module: the free-draw game rules - one
+                function per command (pen down/up, tick, clear, story), each
+                delegating to a lower layer.
+   Usage: The contract is in game.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Game (or Game with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* The drawing game's rules. See game.mli for the public contract. *)
 
 type stage =
@@ -273,7 +287,7 @@ let visible_stroke t =
      Pen_up     -> pen_up ctx screen t
      Clear      -> clear t
      Ask_story  -> ask_story ctx t
-     Save_card | Open_menu -> t        (* screen-level, see bin/play.ml *)
+     Save_card | Open_menu | Dismiss -> t   (* screen-level, see bin/play.ml *)
 *)
 let apply ctx screen t (cmd : Controls.command) =
   match cmd with
@@ -281,7 +295,7 @@ let apply ctx screen t (cmd : Controls.command) =
   | Pen_up -> pen_up ctx screen t
   | Clear -> clear t
   | Ask_story -> ask_story ctx t
-  | Save_card | Open_menu -> t
+  | Save_card | Open_menu | Dismiss -> t
 
 (**
    [stage t] is where the game is.

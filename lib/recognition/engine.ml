@@ -1,3 +1,17 @@
+(**
+   File: engine.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Engine module: the recognition engine - a
+                pure-OCaml forward pass of the small trained transformer that names
+                the constellation a stroke looks like.
+   Usage: The contract is in engine.mli.
+          Import: add hack.recognition to (libraries ...) in a dune file, then use
+          Doodle_recognition.Engine (or Engine with -open Doodle_recognition).
+          Build: dune build    Test: dune test
+*)
+
 (* Recognition engine: pure-OCaml transformer forward pass.
    See engine.mli for the public contract. *)
 

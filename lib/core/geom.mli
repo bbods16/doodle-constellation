@@ -1,3 +1,16 @@
+(**
+   File: geom.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Geom module: 2-D geometry - points, similarity
+                transforms, Procrustes fitting, the tangent-plane (gnomonic) sky
+                projection and angle helpers.
+   Usage: Import: add hack.core to (libraries ...) in a dune file, then use
+          Doodle_core.Geom (or Geom with -open Doodle_core).
+          Build: dune build    Test: dune test
+*)
+
 (** Shared 2-D geometry for Doodle Constellation.
 
     Every matching module works on {!pt}, a plain record, never on

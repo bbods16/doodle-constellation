@@ -1,3 +1,16 @@
+(**
+   File: skyvec.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Skyvec module: unit vectors on the celestial
+                sphere - fast separation tests and the centre of a group of stars.
+   Usage: The contract is in skyvec.mli.
+          Import: add hack.core to (libraries ...) in a dune file, then use
+          Doodle_core.Skyvec (or Skyvec with -open Doodle_core).
+          Build: dune build    Test: dune test
+*)
+
 (* Unit vectors on the celestial sphere. See skyvec.mli. *)
 
 type v = { vx : float; vy : float; vz : float }

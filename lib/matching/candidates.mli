@@ -1,3 +1,16 @@
+(**
+   File: candidates.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Candidates module: turns drawn corners into candidate
+                star matches, using the triangle index and the two-point (handle)
+                rule.
+   Usage: Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Candidates (or Candidates with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (** Candidate generator: turns drawn corners into guesses.
 
     For each drawn triangle, looks up {!Index.find_near} and, for each

@@ -1,3 +1,15 @@
+(**
+   File: fitter.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Fitter module: snaps corners to stars, refits with
+                least squares, scores each candidate and keeps the best match.
+   Usage: Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Fitter (or Fitter with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (** Similarity fitter and scorer.
 
     Tests each hypothesis against every corner: snap each corner to the

@@ -1,3 +1,15 @@
+(**
+   File: app.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the App module: the game loop - opens the window, samples
+                input, steps the current screen, draws it and applies its side
+                effects.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** The game loop: opens the window, samples input, runs the current
     {!Scene} and applies the effects it asks for.
 

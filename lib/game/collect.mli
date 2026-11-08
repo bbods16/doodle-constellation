@@ -1,3 +1,15 @@
+(**
+   File: collect.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Collect module: collect mode's state machine -
+                prompt, draw with a live score, verdict, next figure, win or quit.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Collect (or Collect with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Collect: the "collect all the constellations" game mode, as pure
     state and rules (no raylib). [bin/collect_scene.ml] wires it to the
     screen exactly the way [Play] wires {!Game}.
@@ -10,10 +22,10 @@
       │ Prompt   ├─────────►│ Drawing  ├───────►│ Verdict      │
       │ "Draw:   │          │ live %   │ score, │ % + headline │
       │  Orion"  │◄──┐      └──────────┘ judge  └──────┬───────┘
-      └──────────┘   │ verdict_seconds pass, or a click │
+      └──────────┘   │ pass: 2.5 s / click; insult: Enter│
                      └───────────────────────────────────┤
                          Game_over verdict               ▼
-      ┌──────────┐ diss_seconds pass   ┌──────────────────┐
+      ┌──────────┐    Enter pressed    ┌──────────────────┐
       │ (quit)   │◄────────────────────┤ Dissed           │
       └──────────┘                     │ final diss line  │
                                        └──────────────────┘
@@ -26,7 +38,7 @@ type phase =
   | Prompt                             (** showing which figure to draw *)
   | Drawing                            (** pen down; live score updating *)
   | Verdict of Judge.verdict * float   (** result shown; seconds left on screen *)
-  | Dissed of string * float           (** final diss shown; seconds until quit *)
+  | Dissed of string                   (** final diss shown; waits for Enter, then quits *)
   | Complete                           (** every figure collected *)
 (** Where the mode is. *)
 
@@ -35,10 +47,21 @@ type t
     and its live score, and the phase. Abstract. *)
 
 val verdict_seconds : float
-(** How long a verdict stays up before the next prompt. [2.5]. *)
+(** How long a passing verdict ("Collected!", "NEW RECORD!", a tier)
+    stays up before the next prompt. [2.5]. An insult has no timer: it
+    stays until the player presses Enter (see {!apply}). *)
 
-val diss_seconds : float
-(** How long the final diss stays up before the game closes. [4.0]. *)
+val waiting_for_enter : t -> bool
+(**
+   [waiting_for_enter t] tells whether an insult or the final diss is on
+   screen waiting for the player to press Enter.
+   Requires: nothing
+   Returns: [true] while the phase is [Verdict (Insulted _, _)] or
+            [Dissed _] (until Enter has been pressed)
+   Raises: nothing
+   Example: waiting_for_enter (init c r) = false
+   Complexity: O(1)
+*)
 
 val progress_file : string
 (** Where progress is saved, next to the catalogue: ["progress.csv"]. *)
@@ -57,11 +80,17 @@ val apply : t -> Controls.command -> t
 (**
    [apply t cmd] carries out one command:
    [Pen_down p] starts or extends the stroke (leaving [Prompt], or
-   skipping the rest of a [Verdict]) and updates the live score;
+   skipping the rest of a passing [Verdict]) and updates the live score;
    [Pen_up] scores the stroke ({!Accuracy.score}), runs {!Judge.judge}
    and enters [Verdict] (or [Dissed] on [Game_over]); [Clear] drops the
    stroke and returns to [Prompt]. Other commands leave [t] unchanged.
-   Ignored entirely in [Dissed] and [Complete]. Pen commands are also
+   While an insult is showing ({!waiting_for_enter}), only [Dismiss]
+   (Enter) does anything: it moves on to the next prompt; drawing and
+   clearing are ignored so the insult can't be skipped by accident.
+   On the final diss ([Dissed]) likewise only [Dismiss] (Enter) does
+   anything: it ends the game ({!wants_quit}). In [Complete] only
+   [Dismiss] (Enter) does anything: it asks for the case screen
+   ({!wants_cases}), so the cases earned can be opened. Pen commands are also
    ignored until the button has been up for one frame after the mode
    starts, so the click that opened collect mode can't start a stroke
    (and an instant 0% strike).
@@ -74,9 +103,9 @@ val apply : t -> Controls.command -> t
 
 val tick : float -> t -> t
 (**
-   [tick dt t] counts down the timers: when a [Verdict] runs out the next
-   prompt appears (or [Complete]); when [Dissed] runs out, {!wants_quit}
-   becomes true.
+   [tick dt t] counts down the timers: when a passing [Verdict] runs out
+   the next prompt appears (or [Complete]). Insults and the final diss
+   have no timer: they wait for Enter.
    Requires: [dt >= 0.]
    Returns: the advanced state
    Raises: nothing
@@ -86,12 +115,24 @@ val tick : float -> t -> t
 
 val wants_quit : t -> bool
 (**
-   [wants_quit t] tells the screen to close the game: the final diss has
-   been on screen for {!diss_seconds}.
+   [wants_quit t] tells the screen to close the game: the player has
+   pressed Enter on the final diss.
    Requires: nothing
-   Returns: [true] only after the fifth strike's countdown
+   Returns: [true] only after Enter on the fifth strike's final diss
    Raises: nothing
    Example: wants_quit (init c r) = false
+   Complexity: O(1)
+*)
+
+val wants_cases : t -> bool
+(**
+   [wants_cases t] tells the screen to open the case screen: the player
+   has pressed Enter on the win screen ([Complete]). Winning never closes
+   the game.
+   Requires: nothing
+   Returns: [true] only after Enter in [Complete]
+   Raises: nothing
+   Example: wants_cases (apply complete_state Controls.Dismiss) = true
    Complexity: O(1)
 *)
 
@@ -154,6 +195,30 @@ val roast : t -> Roast.t
    Returns: the roaster
    Raises: nothing
    Example: Roast.strikes (roast (init c r)) = 0
+   Complexity: O(1)
+*)
+
+val earns_case : Judge.verdict -> bool
+(**
+   [earns_case v] tells whether a verdict rewards a case for the case
+   screen ({!Case_opening}): collecting a constellation for the first
+   time, or setting a new record on one.
+   Requires: nothing
+   Returns: [true] for [Collected_new] and [New_record]
+   Raises: nothing
+   Example: earns_case (Judge.New_record { score = 91.; tier = Accuracy.Incredible }) = true
+   Complexity: O(1)
+*)
+
+val take_earned_cases : t -> t * int
+(**
+   [take_earned_cases t] hands the screen the cases earned since the last
+   call (see {!earns_case}), so it can add them to the saved
+   {!Inventory}; the count is reset.
+   Requires: nothing
+   Returns: the state with the count reset, and the number of cases earned
+   Raises: nothing
+   Example: snd (take_earned_cases (init c r)) = 0
    Complexity: O(1)
 *)
 

@@ -1,3 +1,16 @@
+(**
+   File: title_view.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Title_view module: draws the welcome page -
+                background, animation, title, menu, help page, reset dialog and
+                footer.
+   Usage: The contract is in title_view.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* Drawing of the welcome page. See title_view.mli for the contract. *)
 
 open Raylib
@@ -166,13 +179,13 @@ let confirm_dialog t =
    Example: footer ctx shows "engine: ready (7 figures)"
    Complexity: O(1)
    Pseudocode:
-     left: "Up/Down or mouse to choose - Enter to select - Esc to quit"
+     left: "Up/Down or mouse to choose - Enter to select - Esc twice to quit"
      right: match Scene.engine ctx with Some m -> "engine: ready (n figures)"
                                       | None -> "engine: not loaded"
 *)
 let footer ctx =
   let w = get_screen_width () and h = get_screen_height () in
-  draw_text "Up/Down or mouse to choose - Enter to select - Esc to quit" 20 (h - 30) 16 dim_colour;
+  draw_text "Up/Down or mouse to choose - Enter to select - Esc twice to quit" 20 (h - 30) 16 dim_colour;
   let status =
     match Scene.engine ctx with
     | Some m -> Printf.sprintf "engine: ready (%d figures)" (Array.length (Engine.classes m) - 1)

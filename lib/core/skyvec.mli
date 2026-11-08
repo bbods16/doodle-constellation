@@ -1,3 +1,15 @@
+(**
+   File: skyvec.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Skyvec module: unit vectors on the celestial sphere -
+                fast separation tests and the centre of a group of stars.
+   Usage: Import: add hack.core to (libraries ...) in a dune file, then use
+          Doodle_core.Skyvec (or Skyvec with -open Doodle_core).
+          Build: dune build    Test: dune test
+*)
+
 (** Internal helper (not part of the zip's interfaces): unit vectors on
     the celestial sphere, used by {!Index}, {!Candidates} and {!Fitter}
     for fast separation tests and for the centre of a group of stars. *)

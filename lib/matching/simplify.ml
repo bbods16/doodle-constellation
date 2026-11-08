@@ -1,3 +1,17 @@
+(**
+   File: simplify.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Simplify module: the stroke simplifier
+                (Ramer-Douglas-Peucker) - reduces a stroke to 5-9 corners, or says why
+                it can't.
+   Usage: The contract is in simplify.mli.
+          Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Simplify (or Simplify with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (* Stroke simplifier. See simplify.mli for the public contract. *)
 
 open Geom

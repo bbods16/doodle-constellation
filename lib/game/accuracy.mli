@@ -1,3 +1,16 @@
+(**
+   File: accuracy.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Accuracy module: scores a drawing against a figure as
+                a drawtheperfectcircle-style percentage ("87.3%"), with tiers, colour
+                and the 50% pass mark.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Accuracy (or Accuracy with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Accuracy: how closely a drawing matches a constellation figure, as a
     percentage in the style of drawtheperfectcircle.com.
 

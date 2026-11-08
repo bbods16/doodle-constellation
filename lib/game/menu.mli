@@ -1,3 +1,15 @@
+(**
+   File: menu.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Menu module: a generic keyboard and mouse list menu -
+                items, selection, button layout and hit-testing.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Menu (or Menu with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Menu: a generic, reusable list menu (keyboard and mouse), as pure
     logic: no drawing. Used by the welcome page ({!Title}); reusable for
     a pause or settings menu later.

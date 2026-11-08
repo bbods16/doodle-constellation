@@ -1,3 +1,15 @@
+(**
+   File: main.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Main module: the entry point - loads the shared
+                resources, registers the screens and starts the game loop.
+   Usage: Run: dune exec hack -- [LAT_DEG LON_DEG] [CATALOGUE.csv] (from the repo
+          root).
+          Build: dune build (needs raylib and ctypes from opam).
+*)
+
 (* Doodle Constellation: draw a shape, find it in the stars.
 
    Usage: hack [LAT_DEG LON_DEG] [CATALOGUE.csv]
@@ -114,6 +126,7 @@ let load_ctx argv =
   Scene.make_ctx ~stars ~index:(Index.build stars) ?engine ~figures ~data_dir:dir ~lat ~lon ()
 
 (* Every screen of the app. Order does not matter; names must be unique. *)
-let scenes : (module Scene.S) list = [ (module Welcome); (module Play); (module Collect_scene) ]
+let scenes : (module Scene.S) list =
+  [ (module Welcome); (module Play); (module Collect_scene); (module Cases_scene) ]
 
 let () = App.run App.default_config (load_ctx Sys.argv) (Scene.registry scenes) ~first:"welcome"

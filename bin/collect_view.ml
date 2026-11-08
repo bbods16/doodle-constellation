@@ -1,3 +1,16 @@
+(**
+   File: collect_view.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Collect_view module: draws collect mode -
+                target, big live percentage, verdict, strikes, collection shelf,
+                game-over and win screens.
+   Usage: The contract is in collect_view.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* Drawing of collect mode. See collect_view.mli for the contract. *)
 
 open Raylib
@@ -176,7 +189,8 @@ let best_line t =
    Pseudocode:
      match phase with
        | Verdict (Insulted { strikes_left; _ } as v, _) ->
-           Judge.headline v in red (wrapped), then "<strikes_left> strikes left"
+           Judge.headline v in red (wrapped), then "<strikes_left> strikes left",
+           then a pulsing "Press Enter to continue" (insults wait for Enter)
        | Verdict (v, _) -> Judge.headline v in the score colour
        | Prompt -> "Start drawing" hint
        | _ -> ()
@@ -188,8 +202,14 @@ let headline t =
       let y = centred_block (Judge.headline v) y 28 red in
       centred
         (Printf.sprintf "%d strike%s left" strikes_left (if strikes_left = 1 then "" else "s"))
-        (y + 6) 20 text_colour
-  | Collect.Verdict (v, _) -> centred (Judge.headline v) y 40 (rgb (Accuracy.colour (Judge.score_of v)))
+        (y + 6) 20 text_colour;
+      (* the insult has no timer: it stays until Enter (Collect.waiting_for_enter) *)
+      let pulse = 0.55 +. (0.45 *. sin (3. *. get_time ())) in
+      centred "Press Enter to continue" (y + 40) 22 (fade Color.raywhite pulse)
+  | Collect.Verdict (v, _) ->
+      centred (Judge.headline v) y 40 (rgb (Accuracy.colour (Judge.score_of v)));
+      if Collect.earns_case v then
+        centred "+1 case! Open it from the menu." (y + 52) 22 Color.gold
   | Collect.Prompt -> centred "Draw it from memory - click and drag" y 22 dim_colour
   | Collect.Drawing | Collect.Dissed _ | Collect.Complete -> ()
 
@@ -251,23 +271,22 @@ let shelf t =
   end
 
 (**
-   [diss_screen line seconds_left] draws the final diss.
+   [diss_screen line] draws the final diss.
    Requires: inside the drawing block
    Returns: unit
    Raises: nothing
-   Example: diss_screen "Five strikes. ..." 3.2 shows "Closing in 4..."
+   Example: diss_screen "Five strikes. ..." shows GAME OVER, the line and the prompt
    Complexity: O(L)
    Pseudocode:
-     large red [line], wrapped and centred
-     "Closing in <ceil seconds_left>..." underneath
+     "GAME OVER" ; large [line], wrapped and centred
+     pulsing "Press Enter to close the game" underneath (no timer)
 *)
-let diss_screen line seconds_left =
+let diss_screen line =
   let h = get_screen_height () in
   centred "GAME OVER" (h / 4) 64 red;
   let y = centred_block line ((h / 4) + 110) 34 Color.raywhite in
-  centred
-    (Printf.sprintf "Closing in %d..." (max 1 (int_of_float (Float.ceil seconds_left))))
-    (y + 30) 22 dim_colour
+  let pulse = 0.55 +. (0.45 *. sin (3. *. get_time ())) in
+  centred "Press Enter to close the game" (y + 30) 24 (fade Color.raywhite pulse)
 
 (**
    [complete_screen t] draws the win screen.
@@ -279,6 +298,7 @@ let diss_screen line seconds_left =
    Pseudocode:
      title "All <n> constellations collected!"
      one line per figure with its best % ; average best underneath
+     pulsing "Press Enter to open your cases" ; "M / Esc: back to the menu"
 *)
 let complete_screen t =
   let c = Collect.collection t in
@@ -301,7 +321,9 @@ let complete_screen t =
     centred ("Average best: " ^ Accuracy.format avg) ((h / 6) + 110 + (Array.length figs * 30)) 26
       Color.raywhite
   end;
-  centred "Press M to return to the menu" (h - 60) 20 dim_colour
+  let pulse = 0.55 +. (0.45 *. sin (3. *. get_time ())) in
+  centred "Press Enter to open your cases" (h - 100) 28 (fade Color.gold pulse);
+  centred "M / Esc: back to the menu" (h - 55) 20 dim_colour
 
 (**
    [draw ctx t] paints the screen for the current phase.
@@ -312,14 +334,14 @@ let complete_screen t =
    Complexity: O(s + n)
    Pseudocode:
      match Collect.phase t with
-       | Dissed (line, s) -> diss_screen line s
+       | Dissed line -> diss_screen line
        | Complete -> complete_screen t
        | _ -> stroke ; target_prompt ; progress ; strikes ;
               big_percentage ; best_line ; headline ; shelf
 *)
 let draw (_ : Scene.ctx) t =
   match Collect.phase t with
-  | Collect.Dissed (line, s) -> diss_screen line s
+  | Collect.Dissed line -> diss_screen line
   | Collect.Complete -> complete_screen t
   | Collect.Prompt | Collect.Drawing | Collect.Verdict _ ->
       stroke t;

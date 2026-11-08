@@ -1,3 +1,15 @@
+(**
+   File: title_view.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Title_view module: draws the welcome page -
+                background, animation, title, menu, help page, reset dialog and
+                footer.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** Title_view: draws the welcome page ({!Title.t}), one function per
     element.
 

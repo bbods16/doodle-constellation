@@ -1,3 +1,13 @@
+(**
+   File: test_hack.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: OUnit2 test suite for every library layer, including end-to-end
+                matches and the OCaml-vs-PyTorch engine check.
+   Usage: Run: dune test (from the repo root).
+*)
+
 (* Unit and end-to-end tests for the Doodle Constellation library. *)
 
 open OUnit2
@@ -452,7 +462,7 @@ let controls_tests =
            assert_equal [ Controls.Pen_up ] (Controls.read { base with mouse_released = true });
            assert_equal [] (Controls.read base));
          ("keys" >:: fun _ ->
-           assert_equal [ Controls.Clear; Controls.Open_menu ]
+           assert_equal [ Controls.Clear; Controls.Open_menu; Controls.Dismiss ]
              (Controls.read { base with keys = [ Scene.Letter 'm'; Scene.Letter 'c'; Scene.Enter ] });
            assert_equal [ Controls.Save_card ] (Controls.read { base with keys = [ Scene.Letter 's' ] })) ]
 
@@ -803,22 +813,64 @@ let collect_tests =
            in
            let t = play (frame (start ()) []) 0 in
            assert_bool "complete" (Collection.is_complete (Collect.collection t));
-           assert_equal None (Collect.target t));
+           assert_equal None (Collect.target t);
+           (* winning never closes the game: time, clicks and keys keep the
+              win screen up, and Enter asks for the case screen *)
+           let t = frame ~dt:60. t [ Controls.Pen_down (p 1. 1.); Controls.Pen_up; Controls.Clear ] in
+           assert_equal Collect.Complete (Collect.phase t);
+           assert_bool "no quit" (not (Collect.wants_quit t));
+           assert_bool "no cases yet" (not (Collect.wants_cases t));
+           let t = frame t [ Controls.Dismiss ] in
+           assert_bool "Enter opens the cases" (Collect.wants_cases t);
+           assert_bool "still no quit" (not (Collect.wants_quit t)));
          ("five_strikes_quit" >:: fun _ ->
            let line = sample_polyline 3. [| p 0. 0.; p 300. 5. |] in
            let rec miss t k =
              let t = draw_in t line in
-             if k < 5 then miss (frame ~dt:3. t []) (k + 1) else t
+             (* each insult waits for Enter before the next drawing *)
+             if k < 5 then miss (frame t [ Controls.Dismiss ]) (k + 1) else t
            in
            let t = miss (frame (start ()) []) 1 in
            (match Collect.phase t with
-           | Collect.Dissed (line, _) -> assert_bool "diss" (String.length line > 0)
+           | Collect.Dissed line -> assert_bool "diss" (String.length line > 0)
            | _ -> assert_failure "expected Dissed");
+           assert_bool "waiting for Enter" (Collect.waiting_for_enter t);
            assert_bool "not yet" (not (Collect.wants_quit t));
-           (* input is ignored while dissing *)
+           (* no timer: still up a minute later *)
+           let t = frame ~dt:60. t [] in
+           assert_bool "still not quitting after 60 s" (not (Collect.wants_quit t));
+           (* clicks, drawing and other keys are ignored *)
            let t = frame t [ Controls.Pen_down (p 1. 1.) ] in
-           let t = frame ~dt:5. t [] in
-           assert_bool "quits after the countdown" (Collect.wants_quit t));
+           let t = frame t [ Controls.Pen_up; Controls.Clear; Controls.Save_card ] in
+           assert_bool "still not quitting after input" (not (Collect.wants_quit t));
+           (* Enter ends the game *)
+           let t = frame t [ Controls.Dismiss ] in
+           assert_bool "quits on Enter" (Collect.wants_quit t);
+           assert_bool "no longer waiting" (not (Collect.waiting_for_enter t)));
+         ("insult_waits_for_enter" >:: fun _ ->
+           let line = sample_polyline 3. [| p 0. 0.; p 300. 5. |] in
+           let t = draw_in (frame (start ()) []) line in
+           assert_bool "insulted" (Collect.waiting_for_enter t);
+           (* no timer: still showing a minute later *)
+           let t = frame ~dt:60. t [] in
+           assert_bool "still showing after 60 s" (Collect.waiting_for_enter t);
+           (* drawing, clearing and other keys don't dismiss it *)
+           let t = frame t [ Controls.Pen_down (p 5. 5.) ] in
+           let t = frame t [ Controls.Pen_down (p 90. 5.) ] in
+           let t = frame t [ Controls.Pen_up ] in
+           let t = frame t [ Controls.Clear; Controls.Save_card ] in
+           assert_bool "still showing after clicks and keys" (Collect.waiting_for_enter t);
+           assert_equal 1 (Roast.strikes (Collect.roast t));
+           (* Enter moves on to the next prompt *)
+           let t = frame t [ Controls.Dismiss ] in
+           assert_bool "dismissed" (not (Collect.waiting_for_enter t));
+           assert_equal Collect.Prompt (Collect.phase t));
+         ("passing_verdict_still_times_out" >:: fun _ ->
+           let t = frame (start ()) [] in
+           let t = draw_in t (as_stroke (Asterism.shape (Option.get (Collect.target t)))) in
+           assert_bool "not waiting for Enter" (not (Collect.waiting_for_enter t));
+           let t = frame ~dt:(Collect.verdict_seconds +. 0.1) t [] in
+           assert_equal Collect.Prompt (Collect.phase t));
          ("clear" >:: fun _ ->
            let t = frame (start ()) [] in
            let t = frame t [ Controls.Pen_down (p 1. 1.) ] in
@@ -898,25 +950,33 @@ let attract_tests =
            assert_equal (Some "Big Dipper") (Option.map (fun (f, _) -> Asterism.name f) (Attract.current wrapped))) ]
 
 let title_tests =
-  let s = Some { Title.collected = 3; total = 7; best_average = Some 71.4 } in
+  let s = Some { Title.collected = 3; total = 7; best_average = Some 71.4; cases = 2; packs_owned = 1 } in
   let fresh () = Title.init (Lazy.force figures) s in
   let base = Scene.idle ~width:1280 ~height:800 in
   let keys ks t = Title.update { base with keys = ks } t in
   "title"
   >::: [ ("main_items" >:: fun _ ->
            let items = Title.main_items s in
-           assert_equal 5 (List.length items);
+           assert_equal 6 (List.length items);
            assert_equal (Some "3 / 7 collected - avg best 71.4%") (List.hd items).detail;
+           assert_equal (Some "2 cases - 1 / 9 packs") (List.nth items 1).detail;
            let none = Title.main_items None in
            assert_bool "collect off without figures" (not (List.hd none).enabled);
-           assert_bool "reset off without progress" (not (List.nth none 3).enabled));
+           assert_bool "reset off without progress" (not (List.nth none 4).enabled));
          ("go_places" >:: fun _ ->
            assert_equal Title.(Go "collect") (snd (keys [ Scene.Enter ] (fresh ())));
            let t, _ = keys [ Scene.Down ] (fresh ()) in
+           assert_equal Title.(Go "cases") (snd (keys [ Scene.Enter ] t));
+           let t, _ = keys [ Scene.Down ] t in
            assert_equal Title.(Go "play") (snd (keys [ Scene.Enter ] t));
-           assert_equal Title.Quit (snd (keys [ Scene.Escape ] (fresh ()))));
+           (* Esc selects Quit; only a second Esc (on Quit) closes the game *)
+           let t, o = keys [ Scene.Escape ] (fresh ()) in
+           assert_equal Title.Stay o;
+           assert_equal 5 (Menu.selected_index (Title.menu t));
+           assert_equal Title.Quit (snd (keys [ Scene.Escape ] t)));
          ("help" >:: fun _ ->
            let t, _ = keys [ Scene.Down ] (fresh ()) in
+           let t, _ = keys [ Scene.Down ] t in
            let t, _ = keys [ Scene.Down ] t in
            let t, o = keys [ Scene.Enter ] t in
            assert_equal Title.Stay o;
@@ -926,7 +986,7 @@ let title_tests =
            let t, _ = keys [ Scene.Space ] t in
            assert_equal Title.Main (Title.page t));
          ("reset_flow" >:: fun _ ->
-           let to_reset t = List.fold_left (fun t _ -> fst (keys [ Scene.Down ] t)) t [ 1; 2; 3 ] in
+           let to_reset t = List.fold_left (fun t _ -> fst (keys [ Scene.Down ] t)) t [ 1; 2; 3; 4 ] in
            let t, _ = keys [ Scene.Enter ] (to_reset (fresh ())) in
            assert_equal Title.Confirm_reset (Title.page t);
            assert_equal 0 (Menu.selected_index (Title.menu t));
@@ -943,16 +1003,16 @@ let title_tests =
            (match Title.summary t with
            | Some { collected = 0; best_average = None; _ } -> ()
            | _ -> assert_failure "summary not cleared");
-           assert_bool "reset now disabled" (not (List.nth (Menu.items (Title.menu t)) 3).enabled));
+           assert_bool "reset now disabled" (not (List.nth (Menu.items (Title.menu t)) 4).enabled));
          ("resting_mouse" >:: fun _ ->
            (* a mouse resting on Quit must not undo the arrow keys every frame *)
            let t = fresh () in
            let r = Menu.layout (Title.menu t) ~width:1280 ~height:800 in
-           let on_quit = p (r.(4).x +. 10.) (r.(4).y +. 10.) in
+           let on_quit = p (r.(5).x +. 10.) (r.(5).y +. 10.) in
            let t, _ = Title.update { base with mouse = on_quit } t in
-           assert_equal 4 (Menu.selected_index (Title.menu t));
+           assert_equal 5 (Menu.selected_index (Title.menu t));
            let t, _ = Title.update { base with mouse = on_quit; keys = [ Scene.Up ] } t in
-           assert_equal 3 (Menu.selected_index (Title.menu t)));
+           assert_equal 4 (Menu.selected_index (Title.menu t)));
          ("help_text" >:: fun _ ->
            let all = String.concat " " Title.help_lines in
            let has sub =
@@ -963,6 +1023,136 @@ let title_tests =
            assert_bool "pass mark" (has "50.0%");
            assert_bool "strikes" (has "5 strikes")) ]
 
+(* ---------------- case openings ---------------- *)
+
+let case_tests =
+  let rng seed = Random.State.make [| seed |] in
+  let one_case = Inventory.add_cases 1 Inventory.empty in
+  "cases"
+  >::: [ ("rarity_odds" >:: fun _ ->
+           let total = List.fold_left (fun a r -> a +. Rarity.odds r) 0. Rarity.all in
+           assert_feq ~eps:1e-9 "odds sum to 1" 1. total;
+           assert_equal Rarity.Mil_spec (Rarity.of_roll 0.);
+           assert_equal Rarity.Mil_spec (Rarity.of_roll 0.7991);
+           assert_equal Rarity.Restricted (Rarity.of_roll 0.7993);
+           assert_equal Rarity.Exceedingly_rare (Rarity.of_roll 0.9999);
+           assert_equal "Exceedingly Rare" (Rarity.label Rarity.Exceedingly_rare));
+         ("rolls_follow_odds" >:: fun _ ->
+           (* 20,000 rolls land close to CS2's published odds *)
+           let r = rng 7 and n = 20000 in
+           let counts = Hashtbl.create 5 in
+           for _ = 1 to n do
+             let t = Rarity.of_roll (Random.State.float r 1.) in
+             Hashtbl.replace counts t (1 + Option.value ~default:0 (Hashtbl.find_opt counts t))
+           done;
+           let share t = float_of_int (Option.value ~default:0 (Hashtbl.find_opt counts t)) /. float_of_int n in
+           assert_feq ~eps:0.015 "mil-spec" 0.7992 (share Rarity.Mil_spec);
+           assert_feq ~eps:0.01 "restricted" 0.1598 (share Rarity.Restricted);
+           assert_feq ~eps:0.005 "classified" 0.032 (share Rarity.Classified));
+         ("packs" >:: fun _ ->
+           assert_equal 9 (List.length Insult_pack.all);
+           assert_equal [ 4; 2; 1; 1; 1 ]
+             (List.map (fun r -> List.length (Insult_pack.of_rarity r)) Rarity.all);
+           let ids = List.map (fun (p : Insult_pack.t) -> p.id) Insult_pack.all in
+           assert_equal (List.length ids) (List.length (List.sort_uniq compare ids));
+           List.iter
+             (fun (p : Insult_pack.t) ->
+               assert_equal ~msg:p.id 5 (List.length p.insults);
+               (* placeholders fill in cleanly: no stray braces left *)
+               List.iter
+                 (fun line ->
+                   let filled = Roast.insult line ~score:12.3 ~target:"Leo" in
+                   assert_bool (p.id ^ ": " ^ filled) (not (String.contains filled '{')))
+                 (p.insults @ p.final_disses))
+             Insult_pack.all;
+           assert_equal (Some "Event Horizon")
+             (Option.map (fun (p : Insult_pack.t) -> p.name) (Insult_pack.find "black_hole")));
+         ("inventory" >:: fun _ ->
+           let inv = Inventory.add_cases 2 Inventory.empty in
+           assert_equal 2 (Inventory.cases inv);
+           let inv = Option.get (Inventory.spend_case inv) in
+           let inv = Option.get (Inventory.spend_case inv) in
+           assert_equal None (Inventory.spend_case inv);
+           let inv = Inventory.unlock "black_hole" (Inventory.unlock "nope" inv) in
+           let inv = Inventory.unlock "black_hole" inv in
+           assert_equal 1 (List.length (Inventory.owned_packs inv));
+           assert_equal 5 (List.length (Inventory.extra_insults inv));
+           assert_equal 1 (List.length (Inventory.extra_disses inv));
+           assert_raises (Invalid_argument "Inventory.add_cases: negative") (fun () ->
+               Inventory.add_cases (-1) inv));
+         ("inventory_save_load" >:: fun _ ->
+           let inv = Inventory.add_cases 3 Inventory.empty |> Inventory.unlock "supernova"
+                     |> Inventory.unlock "gift_shop" in
+           let path = Filename.temp_file "unlocks" ".csv" in
+           Inventory.save path inv;
+           let back = Inventory.load path in
+           assert_equal 3 (Inventory.cases back);
+           assert_bool "supernova" (Inventory.owns back "supernova");
+           assert_bool "gift shop" (Inventory.owns back "gift_shop");
+           assert_equal 0 (Inventory.cases (Inventory.load "missing.csv")));
+         ("roll_prefers_new_packs" >:: fun _ ->
+           let r = rng 3 in
+           for _ = 1 to 200 do
+             let _, dup = Case.roll r ~owned:(fun _ -> false) in
+             assert_bool "nothing owned, never a duplicate" (not dup)
+           done;
+           let p, dup = Case.roll r ~owned:(fun _ -> true) in
+           assert_bool ("everything owned, always a duplicate: " ^ p.id) dup);
+         ("reel" >:: fun _ ->
+           let s = Case.open_case (rng 11) ~owned:(fun _ -> false) in
+           assert_equal Case.reel_length (Array.length s.reel);
+           assert_bool "winner on the reel" (s.reel.(s.winner_index) == s.won);
+           assert_feq "starts at 0" 0. (Case.position 0.);
+           assert_feq "stops on the winner" (float_of_int Case.winner_slot) (Case.position Case.spin_seconds);
+           assert_bool "slows down" (Case.position 1. -. Case.position 0. > Case.position 6. -. Case.position 5.);
+           assert_bool "finished" (Case.finished Case.spin_seconds));
+         ("opening_flow" >:: fun _ ->
+           let t = Case_opening.init ~seed:5 Inventory.empty in
+           let t = Case_opening.apply t Controls.Dismiss in
+           assert_equal Case_opening.Idle (Case_opening.phase t);
+           let t = Case_opening.init ~seed:5 one_case in
+           let t = Case_opening.apply t Controls.Dismiss in
+           let won =
+             match Case_opening.phase t with
+             | Case_opening.Spinning (s, _) -> s.won
+             | _ -> assert_failure "expected Spinning"
+           in
+           (* unlocked immediately, case spent, save requested *)
+           assert_equal 0 (Inventory.cases (Case_opening.inventory t));
+           assert_bool "unlocked" (Inventory.owns (Case_opening.inventory t) won.id);
+           let t, save = Case_opening.take_save_request t in
+           assert_bool "save requested" (save <> None);
+           (* the reel can't be skipped *)
+           let t = Case_opening.apply t Controls.Dismiss in
+           (match Case_opening.phase t with Case_opening.Spinning _ -> () | _ -> assert_failure "skipped");
+           let t = Case_opening.tick (Case.spin_seconds +. 0.1) t in
+           (match Case_opening.phase t with Case_opening.Revealed _ -> () | _ -> assert_failure "not revealed");
+           (* a release without a press on this screen is not a click *)
+           let t0 = Case_opening.apply t Controls.Pen_up in
+           (match Case_opening.phase t0 with Case_opening.Revealed _ -> () | _ -> assert_failure "stray release");
+           let t = Case_opening.apply (Case_opening.apply t (Controls.Pen_down (p 1. 1.))) Controls.Pen_up in
+           assert_equal Case_opening.Idle (Case_opening.phase t));
+         ("roast_uses_packs" >:: fun _ ->
+           (* with only the extras pickable at this seed, the pack line appears *)
+           let line = "PACK LINE {score}" in
+           let found = ref false in
+           for seed = 0 to 40 do
+             let r = Roast.create ~seed ~extra_insults:[ line ] () in
+             match snd (Roast.miss r ~score:10. ~target:"Leo") with
+             | Roast.Insult l when l = "PACK LINE 10.0%" -> found := true
+             | _ -> ()
+           done;
+           assert_bool "pack insults are in the pool" !found);
+         ("collect_earns_cases" >:: fun _ ->
+           let t = frame (Collect.init (Collection.create (Lazy.force figures)) (Roast.create ())) [] in
+           let target = Asterism.shape (Option.get (Collect.target t)) in
+           let t = draw_in t (as_stroke target) in
+           let t, n = Collect.take_earned_cases t in
+           assert_equal ~msg:"collecting a new constellation" 1 n;
+           assert_equal 0 (snd (Collect.take_earned_cases t));
+           assert_bool "Collected_new earns" (Collect.earns_case (Judge.Collected_new { score = 60.; tier = Accuracy.Collected }));
+           assert_bool "an insult doesn't" (not (Collect.earns_case (Judge.Insulted { score = 1.; line = ""; strikes_left = 4 })))) ]
+
 let () =
   run_test_tt_main
     ("doodle"
@@ -970,4 +1160,4 @@ let () =
            matching_tests; visibility_tests; morph_tests; narrate_tests; engine_tests;
            scene_tests; controls_tests; game_tests; data_dir_tests; asterism_tests;
            accuracy_tests; roast_tests; collection_tests; judge_tests; collect_tests;
-           menu_tests; attract_tests; title_tests ])
+           menu_tests; attract_tests; title_tests; case_tests ])

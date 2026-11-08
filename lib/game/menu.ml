@@ -1,3 +1,16 @@
+(**
+   File: menu.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Menu module: a generic keyboard and mouse list
+                menu - items, selection, button layout and hit-testing.
+   Usage: The contract is in menu.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Menu (or Menu with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Generic keyboard + mouse menu. See menu.mli for the contract. *)
 
 type 'a item = { label : string; detail : string option; action : 'a; enabled : bool }

@@ -1,3 +1,15 @@
+(**
+   File: catalogue.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Catalogue module: the star catalogue - loads
+                data/stars.csv into star records (angles in radians) and labels them.
+   Usage: Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Catalogue (or Catalogue with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (** Star catalogue store: the bright stars the matcher may use.
 
     Loaded once at startup from a CSV file with the header

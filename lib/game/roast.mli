@@ -1,3 +1,15 @@
+(**
+   File: roast.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Roast module: the strike counter, insults for
+                drawings under 50%, and the final diss on the 5th strike.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Roast (or Roast with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Roast: insults for drawings under 50%, and the final diss that ends
     the game.
 
@@ -34,13 +46,17 @@ val final_disses : string list
 (** The pool of closing lines shown on the last strike, e.g.
     ["Five strikes. The stars have filed a restraining order. Goodbye."]. *)
 
-val create : ?seed:int -> unit -> t
+val create : ?seed:int -> ?extra_insults:string list -> ?extra_disses:string list -> unit -> t
 (**
-   [create ?seed ()] starts a session with no strikes.
+   [create ?seed ?extra_insults ?extra_disses ()] starts a session with no
+   strikes. The extras are lines from unlocked insult packs
+   ({!Inventory.extra_insults}); they join {!insults} and {!final_disses}
+   in the pools lines are picked from.
    Requires: nothing
-   Returns: a fresh roaster; [seed] (default 0) fixes the order of lines
+   Returns: a fresh roaster; [seed] (default 0) fixes the order of lines;
+            the extras default to none
    Raises: nothing
-   Example: strikes (create ()) = 0
+   Example: strikes (create ~extra_insults:["Wow."] ()) = 0
    Complexity: O(1)
 *)
 

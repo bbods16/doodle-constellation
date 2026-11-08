@@ -1,3 +1,16 @@
+(**
+   File: index.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Index module: a geometric-hashing index of small star
+                triangles, keyed by a shape that ignores position, size, rotation and
+                mirroring.
+   Usage: Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Index (or Index with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (** Invariant index: geometric hashing of star triangles.
 
     Every triangle of stars within {!max_sep_deg} of each other is

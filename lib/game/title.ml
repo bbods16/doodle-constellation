@@ -1,7 +1,21 @@
+(**
+   File: title.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Title module: the welcome page rules - main
+                menu, how to play, reset confirmation, and which screen to go to next.
+   Usage: The contract is in title.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Title (or Title with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* The welcome page's rules. See title.mli for the contract. *)
 
 type action =
   | Start_collect
+  | Open_cases
   | Free_draw
   | How_to_play
   | Reset_progress
@@ -10,7 +24,13 @@ type action =
   | Confirm_no
 
 type page = Main | Help | Confirm_reset
-type summary = { collected : int; total : int; best_average : float option }
+type summary = {
+  collected : int;
+  total : int;
+  best_average : float option;
+  cases : int;
+  packs_owned : int;
+}
 type outcome = Stay | Go of string | Quit | Reset
 
 type t = {
@@ -24,6 +44,7 @@ type t = {
 }
 
 let collect_scene = "collect"
+let cases_scene = "cases"
 let free_draw_scene = "play"
 
 let help_lines =
@@ -39,13 +60,14 @@ let help_lines =
 (**
    [main_items s] is the main menu.
    Requires: nothing
-   Returns: five items
+   Returns: six items
    Raises: nothing
    Example: detail of the first item = Some "3 / 7 collected"
    Complexity: O(1)
    Pseudocode:
      [ Collect (enabled when there are figures; detail "k / n collected",
                 plus " - avg best x%" once attempted) ;
+       Open cases (detail "n cases - k / 9 packs") ;
        Free draw ; How to play ;
        Reset progress (enabled only when something was attempted) ; Quit ]
 *)
@@ -59,10 +81,18 @@ let main_items s =
           | None -> ""))
       s
   in
+  let cases_detail =
+    Option.map
+      (fun s ->
+        Printf.sprintf "%d case%s - %d / %d packs" s.cases (if s.cases = 1 then "" else "s")
+          s.packs_owned (List.length Insult_pack.all))
+      s
+  in
   let item ?(detail = None) ?(enabled = true) label action = { Menu.label; detail; action; enabled } in
   let has_figures = match s with Some s -> s.total > 0 | None -> false in
   let attempted = match s with Some { best_average = Some _; _ } -> true | _ -> false in
   [ item ~detail ~enabled:has_figures "Collect the constellations" Start_collect;
+    item ~detail:cases_detail "Open cases" Open_cases;
     item "Free draw" Free_draw;
     item "How to play" How_to_play;
     item ~enabled:attempted "Reset progress" Reset_progress;
@@ -103,7 +133,7 @@ let init figures s =
    Requires: nothing
    Returns: confirm menu on Confirm_reset, else main
    Raises: nothing
-   Example: List.length (Menu.items (menu (init f None))) = 5
+   Example: List.length (Menu.items (menu (init f None))) = 6
    Complexity: O(1)
    Pseudocode:
      if page = Confirm_reset then t.confirm else t.main
@@ -130,18 +160,38 @@ let with_menu t m = match t.page with Confirm_reset -> { t with confirm = m } | 
    Example: snd (act t Start_collect) = Go "collect"
    Complexity: O(1)
    Pseudocode:
-     Start_collect -> Go collect_scene ; Free_draw -> Go free_draw_scene
+     Start_collect -> Go collect_scene ; Open_cases -> Go cases_scene
+     Free_draw -> Go free_draw_scene
      How_to_play -> Help ; Reset_progress -> Confirm_reset (No selected)
      Quit_game -> Quit ; Confirm_yes -> Reset ; Confirm_no -> Main
 *)
 let act t = function
   | Start_collect -> (t, Go collect_scene)
+  | Open_cases -> (t, Go cases_scene)
   | Free_draw -> (t, Go free_draw_scene)
   | How_to_play -> ({ t with page = Help }, Stay)
   | Reset_progress -> ({ t with page = Confirm_reset; confirm = confirm_menu () }, Stay)
   | Quit_game -> (t, Quit)
   | Confirm_yes -> (t, Reset)
   | Confirm_no -> ({ t with page = Main }, Stay)
+
+(**
+   [select_quit m] moves the selection to the last item (Quit).
+   Requires: nothing
+   Returns: the menu with its last item selected, or [m] if it can't get there
+   Raises: nothing
+   Example: Menu.selected_index (select_quit (Menu.create (main_items None))) = 5
+   Complexity: O(n^2) in the number of items (n is 6)
+   Pseudocode:
+     last <- number of items - 1
+     press Down until the selection is last (at most n times)
+*)
+let select_quit m =
+  let last = List.length (Menu.items m) - 1 in
+  let rec go m k =
+    if Menu.selected_index m = last || k = 0 then m else go (fst (Menu.apply m ~rects:[||] Menu.Down)) (k - 1)
+  in
+  go m (last + 1)
 
 (**
    [update inp t] is one frame.
@@ -155,7 +205,8 @@ let act t = function
      moved <- mouse differs from last frame ; remember it
      match page with
        | Help -> back to Main on any key or click
-       | Main when Escape -> Quit
+       | Main when Escape -> Quit if Quit is selected, else select Quit
+         (two presses to close, so leaving a screen with Esc never quits)
        | Confirm_reset when Escape -> Main
        | Main | Confirm_reset ->
            cmds <- Menu.read inp (dropping Point unless the mouse moved)
@@ -170,7 +221,9 @@ let update (inp : Scene.input) t =
   in
   match t.page with
   | Help -> if inp.keys <> [] || inp.mouse_pressed then ({ t with page = Main }, Stay) else (t, Stay)
-  | Main when Scene.pressed inp Scene.Escape -> (t, Quit)
+  | Main when Scene.pressed inp Scene.Escape ->
+      let quit_selected = Menu.selected_index t.main = List.length (Menu.items t.main) - 1 in
+      if quit_selected then (t, Quit) else ({ t with main = select_quit t.main }, Stay)
   | Confirm_reset when Scene.pressed inp Scene.Escape -> ({ t with page = Main }, Stay)
   | Main | Confirm_reset ->
       let cmds =

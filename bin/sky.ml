@@ -1,3 +1,15 @@
+(**
+   File: sky.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Sky module: the raylib renderer - stars, matched
+                patterns and labels, strokes, fit info and screenshots.
+   Usage: The contract is in sky.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* Sky renderer. See sky.mli for the public contract. *)
 
 open Raylib

@@ -1,3 +1,15 @@
+(**
+   File: doodle_game.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Layer 4 interface (game): lists the screen framework, free-draw,
+                collect-mode and welcome-page modules and the dependency rules.
+   Usage: Import: add hack.game to (libraries ...) and (:standard -open Doodle_game)
+          to (flags ...) in a dune file.
+          Build: dune build
+*)
+
 (** {1 Layer 4 — Game}
 
     The rules of the app and the screen framework, all pure OCaml (no
@@ -33,6 +45,14 @@
     {- {!Title}      — the welcome page's rules: main menu, how to play, confirm reset.}
     {- {!Attract}    — background animation: figures drawing themselves star by star.}}
 
+    {2 Case openings (see docs/CASES.md)}
+    {ul
+    {- {!Rarity}       — CS2-style tiers, odds and colours.}
+    {- {!Insult_pack}  — the unlockable packs of extra insults.}
+    {- {!Inventory}    — unopened cases and unlocked packs; saved to disk.}
+    {- {!Case}         — rolling a case and the reel animation.}
+    {- {!Case_opening} — the case screen's rules.}}
+
     {2 Key types}
     {ul
     {- [Scene.ctx]        — resources shared by every screen (abstract).}
@@ -57,3 +77,8 @@ module Accuracy = Accuracy
 module Menu = Menu
 module Title = Title
 module Attract = Attract
+module Case_opening = Case_opening
+module Case = Case
+module Inventory = Inventory
+module Insult_pack = Insult_pack
+module Rarity = Rarity

@@ -1,3 +1,17 @@
+(**
+   File: scene.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Scene module: the screen framework - the Scene.S
+                signature every screen implements, the per-frame input record, the
+                shared context, the registry and step.
+   Usage: The contract is in scene.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Scene (or Scene with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Scenes and the scene router. See scene.mli for the public contract. *)
 
 type key =

@@ -1,3 +1,16 @@
+(**
+   File: visibility.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Visibility module: where and when to look - sidereal
+                time, altitude/azimuth, Sun position, darkness check and the best
+                viewing time.
+   Usage: Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Visibility (or Visibility with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (** Visibility calculator: when and where the match is best seen.
 
     Pure float maths. Latitude and longitude come from command-line

@@ -1,3 +1,17 @@
+(**
+   File: asterism.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Asterism module: the collectible constellation
+                figures from data/asterisms.csv, each with its stars in drawing order
+                and its ideal outline.
+   Usage: The contract is in asterism.mli.
+          Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Asterism (or Asterism with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (* The collectible constellation figures. See asterism.mli for the contract. *)
 
 type t = {

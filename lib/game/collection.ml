@@ -1,3 +1,17 @@
+(**
+   File: collection.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Collection module: collect-mode progress - which
+                figures are collected and each one's best score, saved to
+                data/progress.csv.
+   Usage: The contract is in collection.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Collection (or Collection with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Collected figures and best scores. See collection.mli for the contract. *)
 
 type entry = { figure : Asterism.t; collected : bool; best : float option }

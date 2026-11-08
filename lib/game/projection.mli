@@ -1,3 +1,15 @@
+(**
+   File: projection.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Projection module: sky-to-screen maths -
+                stereographic projection and framing a match on screen.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Projection (or Projection with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Sky-to-screen projection: the pure maths behind the renderer.
 
     Split out of [bin/sky.ml] so the game logic ({!Game}) can place stars

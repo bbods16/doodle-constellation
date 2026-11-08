@@ -1,3 +1,15 @@
+(**
+   File: doodle_matching.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Layer 3 interface (matching): lists the stroke-to-stars pipeline
+                modules and the layer's dependency rules.
+   Usage: Import: add hack.matching to (libraries ...) and
+          (:standard -open Doodle_matching) to (flags ...) in a dune file.
+          Build: dune build
+*)
+
 (** {1 Layer 3 — Matching}
 
     Turns a hand-drawn stroke into the star pattern it matches. A stroke

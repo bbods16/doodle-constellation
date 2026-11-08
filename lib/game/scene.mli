@@ -1,3 +1,16 @@
+(**
+   File: scene.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Scene module: the screen framework - the Scene.S
+                signature every screen implements, the per-frame input record, the
+                shared context, the registry and step.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Scene (or Scene with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Scenes: the pluggable screens of the app (welcome, play, ...).
 
     The game loop no longer knows about any particular screen. Each

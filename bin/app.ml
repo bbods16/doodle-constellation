@@ -1,3 +1,16 @@
+(**
+   File: app.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the App module: the game loop - opens the window,
+                samples input, steps the current screen, draws it and applies its side
+                effects.
+   Usage: The contract is in app.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* The game loop. See app.mli for the public contract. *)
 
 open Raylib

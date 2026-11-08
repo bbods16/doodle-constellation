@@ -1,3 +1,14 @@
+(**
+   File: sky.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Sky module: the raylib renderer - stars, matched
+                patterns and labels, strokes, fit info and screenshots.
+   Usage: Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (** Sky renderer: the only module besides [main.ml] that calls raylib.
 
     Projects the matched patch of sky stereographically (it keeps small

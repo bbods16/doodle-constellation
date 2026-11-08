@@ -1,3 +1,16 @@
+(**
+   File: collection.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Collection module: collect-mode progress - which
+                figures are collected and each one's best score, saved to
+                data/progress.csv.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Collection (or Collection with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Collection: which constellation figures the player has collected, and
     their best score for each.
 

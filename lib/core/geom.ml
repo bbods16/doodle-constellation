@@ -1,3 +1,17 @@
+(**
+   File: geom.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Geom module: 2-D geometry - points, similarity
+                transforms, Procrustes fitting, the tangent-plane (gnomonic) sky
+                projection and angle helpers.
+   Usage: The contract is in geom.mli.
+          Import: add hack.core to (libraries ...) in a dune file, then use
+          Doodle_core.Geom (or Geom with -open Doodle_core).
+          Build: dune build    Test: dune test
+*)
+
 (* Shared 2-D geometry. See geom.mli for the public contract. *)
 
 type pt = { x : float; y : float }

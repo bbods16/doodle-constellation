@@ -1,3 +1,16 @@
+(**
+   File: fitter.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Fitter module: snaps corners to stars, refits
+                with least squares, scores each candidate and keeps the best match.
+   Usage: The contract is in fitter.mli.
+          Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Fitter (or Fitter with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (* Similarity fitter and scorer. See fitter.mli for the public contract. *)
 
 open Geom

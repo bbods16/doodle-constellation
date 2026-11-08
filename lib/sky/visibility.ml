@@ -1,3 +1,17 @@
+(**
+   File: visibility.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Visibility module: where and when to look -
+                sidereal time, altitude/azimuth, Sun position, darkness check and the
+                best viewing time.
+   Usage: The contract is in visibility.mli.
+          Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Visibility (or Visibility with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (* Visibility calculator. See visibility.mli for the public contract. *)
 
 let two_pi = 2. *. Float.pi

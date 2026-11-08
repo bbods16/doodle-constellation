@@ -1,3 +1,15 @@
+(**
+   File: narrate.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Narrate module: an optional invented story about a
+                match, fetched from the Claude API in a background domain.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Narrate (or Narrate with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Narration layer (optional, not in the two-hour build).
 
     Asks a language model for a short invented myth built only from the

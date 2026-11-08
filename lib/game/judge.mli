@@ -1,3 +1,15 @@
+(**
+   File: judge.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Judge module: turns one finished drawing's score into
+                a verdict - collected, new record, passed, insulted or game over.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Judge (or Judge with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Judge: turns one finished drawing's score into a verdict, updating
     the collection and the strike count.
 

@@ -1,3 +1,15 @@
+(**
+   File: title.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Title module: the welcome page rules - main menu, how
+                to play, reset confirmation, and which screen to go to next.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Title (or Title with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Title: the welcome page's logic, pure (no drawing, no disk). The
     [Welcome] screen becomes glue over this and [Title_view].
 
@@ -22,6 +34,7 @@
 
 type action =
   | Start_collect   (** go to collect mode *)
+  | Open_cases      (** go to the case screen *)
   | Free_draw       (** go to the free-drawing game *)
   | How_to_play     (** open the rules page *)
   | Reset_progress  (** ask to wipe collected figures and best scores *)
@@ -40,9 +53,11 @@ type summary = {
   collected : int;              (** figures collected so far *)
   total : int;                  (** figures in the game *)
   best_average : float option;  (** mean best score over attempted figures *)
+  cases : int;                  (** unopened cases *)
+  packs_owned : int;            (** insult packs unlocked *)
 }
-(** Saved progress, shown under the Collect button. Built by the screen
-    from {!Collection}. *)
+(** Saved progress, shown under the Collect and Open cases buttons.
+    Built by the screen from {!Collection} and {!Inventory}. *)
 
 type outcome =
   | Stay            (** stay on the welcome page *)
@@ -57,6 +72,9 @@ type t
 val collect_scene : string
 (** Scene name for collect mode: ["collect"]. *)
 
+val cases_scene : string
+(** Scene name for the case screen: ["cases"]. *)
+
 val free_draw_scene : string
 (** Scene name for the free-drawing game: ["play"]. *)
 
@@ -68,12 +86,13 @@ val help_lines : string list
 val main_items : summary option -> action Menu.item list
 (**
    [main_items s] is the main menu: Collect (with ["k / n collected"] as
-   its detail), Free draw, How to play, Reset progress (disabled when
-   nothing is saved), Quit.
+   its detail), Open cases (with ["n cases - k / 9 packs"]), Free draw,
+   How to play, Reset progress (disabled when nothing is saved), Quit.
    Requires: nothing
-   Returns: five items in that order
+   Returns: six items in that order
    Raises: nothing
-   Example: (List.hd (main_items (Some { collected = 3; total = 7; best_average = None }))).detail
+   Example: (List.hd (main_items (Some { collected = 3; total = 7; best_average = None;
+                                         cases = 0; packs_owned = 0 }))).detail
             = Some "3 / 7 collected"
    Complexity: O(1)
 *)
@@ -94,7 +113,9 @@ val update : Scene.input -> t -> t * outcome
    [update inp t] is one frame: advance the clock and animation, read
    {!Menu} commands from [inp], apply them to the current page's menu,
    and turn a chosen action into a page change or an outcome. Escape on
-   [Main] quits; on [Help] or [Confirm_reset] it returns to [Main]; on
+   [Main] selects Quit, and quits only if Quit was already selected (so
+   the Esc that leaves a game, or a second stray one, never closes the
+   window by surprise); on [Help] or [Confirm_reset] it returns to [Main]; on
    [Help] any key or click also returns. Hovering only changes the
    selection when the mouse actually moves, so a resting mouse doesn't
    fight the arrow keys.
@@ -134,7 +155,7 @@ val menu : t -> action Menu.t
    Requires: nothing
    Returns: the menu
    Raises: nothing
-   Example: List.length (Menu.items (menu (init f None))) = 5
+   Example: List.length (Menu.items (menu (init f None))) = 6
    Complexity: O(1)
 *)
 

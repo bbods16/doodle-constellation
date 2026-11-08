@@ -14,3 +14,6 @@ doodle_card.png
 
 # Per-player collect-mode progress
 data/progress.csv
+
+# Per-player unopened cases and unlocked insult packs
+data/unlocks.csv

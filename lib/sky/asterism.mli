@@ -1,3 +1,16 @@
+(**
+   File: asterism.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Asterism module: the collectible constellation
+                figures from data/asterisms.csv, each with its stars in drawing order
+                and its ideal outline.
+   Usage: Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Asterism (or Asterism with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (** Asterism: the constellation figures the player can collect.
 
     Design notes: [docs/COLLECT_PLAN.md].

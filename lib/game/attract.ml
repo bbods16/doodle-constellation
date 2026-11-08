@@ -1,3 +1,16 @@
+(**
+   File: attract.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Attract module: the welcome page background
+                animation - each figure draws itself star by star, then fades.
+   Usage: The contract is in attract.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Attract (or Attract with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Welcome-page background animation. See attract.mli for the contract. *)
 
 type t = { figures : Asterism.t array; index : int; clock : float }

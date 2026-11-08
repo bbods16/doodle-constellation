@@ -1,3 +1,15 @@
+(**
+   File: play.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Play module: the free-draw screen glue -
+                Controls -> Game -> Play_view.
+   Usage: The contract is in play.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* The drawing game scene: glue between Controls, Game and Play_view.
    See play.mli for the public contract.
 

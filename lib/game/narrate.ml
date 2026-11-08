@@ -1,3 +1,16 @@
+(**
+   File: narrate.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Narrate module: an optional invented story about
+                a match, fetched from the Claude API in a background domain.
+   Usage: The contract is in narrate.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Narrate (or Narrate with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Narration layer. See narrate.mli for the public contract. *)
 
 type request = { shape : string; stars : string list; neighbour : string }

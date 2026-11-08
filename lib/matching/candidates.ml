@@ -1,3 +1,17 @@
+(**
+   File: candidates.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Candidates module: turns drawn corners into
+                candidate star matches, using the triangle index and the two-point
+                (handle) rule.
+   Usage: The contract is in candidates.mli.
+          Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Candidates (or Candidates with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (* Candidate generator. See candidates.mli for the public contract. *)
 
 type hypothesis = {

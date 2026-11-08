@@ -113,7 +113,7 @@ Shared with the collect plan; do them once:
 | Free draw mode | kept, as menu item 2 | remove it, collect mode only |
 | Confirm before resetting progress | yes, **No** selected by default | reset immediately |
 | Background animation | on, cycling all figures | static starfield only |
-| Escape on the main menu | quits (now handled by the menu itself, not raylib) | do nothing; quit only via the menu |
+| Escape on the main menu | selects Quit; a second Escape quits (handled by the menu, not raylib) | do nothing; quit only via the menu |
 | Show your best % per figure on the title screen | only the average, under Collect | a full collection panel on the title screen |
 
 ## As built: differences from the plan
@@ -121,7 +121,8 @@ Shared with the collect plan; do them once:
 1. **Escape is handled by the screens, not raylib.** raylib closed the
    window on Escape before any screen saw it, so "Escape goes back" on
    How to play and the reset confirm couldn't work. `App.run` now turns
-   raylib's exit key off: Escape quits from the main menu, goes back from
+   raylib's exit key off: Escape selects Quit on the main menu (a second
+   Escape quits, so leaving a game with Escape never closes the window), goes back from
    How to play and the confirm, and returns to the menu from either game.
 2. **Hover only moves the selection when the mouse moves.** Otherwise a
    mouse resting over a button would snap the selection back every frame

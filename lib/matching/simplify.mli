@@ -1,3 +1,16 @@
+(**
+   File: simplify.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Simplify module: the stroke simplifier
+                (Ramer-Douglas-Peucker) - reduces a stroke to 5-9 corners, or says why
+                it can't.
+   Usage: Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Simplify (or Simplify with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (** Stroke simplifier: reduces a smoothed stroke to 5 to 9 corners.
 
     Adapted from GIMP's [simplify_subdivide] in [gimpboundary.c]: the

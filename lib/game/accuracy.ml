@@ -1,3 +1,17 @@
+(**
+   File: accuracy.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Accuracy module: scores a drawing against a
+                figure as a drawtheperfectcircle-style percentage ("87.3%"), with
+                tiers, colour and the 50% pass mark.
+   Usage: The contract is in accuracy.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Accuracy (or Accuracy with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Drawing accuracy as a percentage. See accuracy.mli for the contract. *)
 
 type tier = Near_perfect | Incredible | Amazing | Great | Collected | Failed

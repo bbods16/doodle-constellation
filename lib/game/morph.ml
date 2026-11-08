@@ -1,3 +1,16 @@
+(**
+   File: morph.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Morph module: the animation that slides, turns
+                and scales the drawing onto the matched stars.
+   Usage: The contract is in morph.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Morph (or Morph with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Morph animation. See morph.mli for the public contract. *)
 
 open Geom

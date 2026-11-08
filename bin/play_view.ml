@@ -1,3 +1,15 @@
+(**
+   File: play_view.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Play_view module: draws the free-draw game, one
+                function per screen element.
+   Usage: The contract is in play_view.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* Drawing of the game state. See play_view.mli for the public contract. *)
 
 open Raylib
@@ -142,6 +154,7 @@ let help () =
     | Save_card -> "save"
     | Ask_story -> "story"
     | Open_menu -> "menu"
+    | Dismiss -> "continue"
     | Pen_down _ | Pen_up -> ""
   in
   let entry (k, c) =

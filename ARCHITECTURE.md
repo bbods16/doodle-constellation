@@ -30,19 +30,20 @@ to open a `.ml` file to use something.
 | 2 sky | [`lib/sky/doodle_sky.mli`](lib/sky/doodle_sky.mli) | `Catalogue`, `Visibility`, `Data_dir`, `Asterism` | core |
 | 3 matching | [`lib/matching/doodle_matching.mli`](lib/matching/doodle_matching.mli) | `Capture`, `Simplify`, `Index`, `Candidates`, `Fitter` | core, sky |
 | 3b recognition | [`lib/recognition/doodle_recognition.mli`](lib/recognition/doodle_recognition.mli) | `Engine` | core |
-| 4 game | [`lib/game/doodle_game.mli`](lib/game/doodle_game.mli) | framework: `Scene`, `Controls`; free draw: `Game`, `Projection`, `Morph`, `Narrate`; collect mode: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`; welcome page: `Menu`, `Title`, `Attract` | core, sky, matching, recognition |
-| 5 app | [`bin/main.mli`](bin/main.mli) | loop: `App`, `Main`; screens: `Welcome` + `Title_view`, `Play` + `Play_view`, `Collect_scene` + `Collect_view`; renderer: `Sky` | every layer + raylib |
+| 4 game | [`lib/game/doodle_game.mli`](lib/game/doodle_game.mli) | framework: `Scene`, `Controls`; free draw: `Game`, `Projection`, `Morph`, `Narrate`; collect mode: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`; welcome page: `Menu`, `Title`, `Attract`; cases: `Rarity`, `Insult_pack`, `Inventory`, `Case`, `Case_opening` | core, sky, matching, recognition |
+| 5 app | [`bin/main.mli`](bin/main.mli) | loop: `App`, `Main`; screens: `Welcome` + `Title_view`, `Play` + `Play_view`, `Collect_scene` + `Collect_view`, `Cases_scene` + `Cases_view`; renderer: `Sky` | every layer + raylib |
 
 Only layer 5 touches raylib. Layers 1–4 are pure OCaml and are unit-tested
 without a window (`dune test`).
 
-## The three screens
+## The four screens
 
 | Screen (scene name) | Rules (pure, tested) | Glue | Drawing |
 | --- | --- | --- | --- |
 | Welcome page (`"welcome"`, the first screen) | `Title`, `Menu`, `Attract` | `bin/welcome.ml` | `bin/title_view.ml` |
 | Free draw (`"play"`) | `Game`, `Controls` | `bin/play.ml` | `bin/play_view.ml` |
 | Collect mode (`"collect"`) | `Collect`, `Judge`, `Accuracy`, `Collection`, `Roast`, `Controls` | `bin/collect_scene.ml` | `bin/collect_view.ml` |
+| Case openings (`"cases"`) | `Case_opening`, `Case`, `Inventory`, `Insult_pack`, `Rarity`, `Controls` | `bin/cases_scene.ml` | `bin/cases_view.ml` |
 
 Every screen follows the same pattern: the glue reads input, hands it to
 the pure rules, and hands the resulting state to the drawing module.
@@ -57,6 +58,7 @@ the pure rules, and hands the resulting state to the drawing module.
 | [docs/PROOFS.md](docs/PROOFS.md) | every Lean theorem explained, mapped to the code |
 | [docs/COLLECT_PLAN.md](docs/COLLECT_PLAN.md) | collect mode design: scoring rule, verdicts, insults, 5 strikes, and what changed while building it |
 | [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) | welcome page design: menu, how to play, reset, background animation |
+| [docs/CASES.md](docs/CASES.md) | case openings: earning cases, CS2 odds, the 9 insult packs |
 
 ## One frame, end to end
 
@@ -115,6 +117,7 @@ the pure rules, and hands the resulting state to the drawing module.
 | edit the insults | `Roast.insults` / `Roast.final_disses` in `lib/game/roast.ml` | |
 | add a constellation to collect | a row in `data/asterisms.csv` (its stars must be in `data/stars.csv`) | |
 | change the welcome menu | `Title.main_items` in `lib/game/title.ml` | [docs/WELCOME_PLAN.md](docs/WELCOME_PLAN.md) |
+| add an insult pack or change case odds | `Insult_pack.all` / `Rarity.odds` in `lib/game/` | [docs/CASES.md](docs/CASES.md) |
 
 ## Conventions
 

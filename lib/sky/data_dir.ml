@@ -1,3 +1,17 @@
+(**
+   File: data_dir.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Data_dir module: finds data/stars.csv wherever
+                the app is started - DOODLE_DATA, then the current folder and its
+                parents, then the executable's.
+   Usage: The contract is in data_dir.mli.
+          Import: add hack.sky to (libraries ...) in a dune file, then use
+          Doodle_sky.Data_dir (or Data_dir with -open Doodle_sky).
+          Build: dune build    Test: dune test
+*)
+
 (* Locating the data folder. See data_dir.mli for the public contract. *)
 
 let stars_file = "stars.csv"

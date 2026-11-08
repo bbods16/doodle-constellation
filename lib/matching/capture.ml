@@ -1,3 +1,16 @@
+(**
+   File: capture.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Capture module: stroke capture - drops mouse
+                jitter and Gaussian-smooths the samples into a stroke.
+   Usage: The contract is in capture.mli.
+          Import: add hack.matching to (libraries ...) in a dune file, then use
+          Doodle_matching.Capture (or Capture with -open Doodle_matching).
+          Build: dune build    Test: dune test
+*)
+
 (* Stroke capture. See capture.mli for the public contract. *)
 
 open Geom

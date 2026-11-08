@@ -1,3 +1,16 @@
+(**
+   File: game.mli
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Interface of the Game module: the free-draw game rules - one function
+                per command (pen down/up, tick, clear, story), each delegating to a
+                lower layer.
+   Usage: Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Game (or Game with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (** Game: the drawing game's rules as pure functions, no raylib.
 
     One frame of the game is: {!apply} each {!Controls.command}, then

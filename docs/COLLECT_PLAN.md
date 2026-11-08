@@ -1,11 +1,11 @@
 # Collect mode — "collect all the constellations"
 
 **Status: built.** Every module below is implemented and unit-tested
-(part of the 98 tests in `test/test_hack.ml`), and the screen is
+(part of the 100 tests in `test/test_hack.ml`), and the screen is
 registered as `"collect"`. It was also checked in the running app:
 collecting a figure, an insult with strike markers, Escape back to the
-menu, and the 5th strike showing GAME OVER and closing the game by
-itself. This document was the plan; **"As built"** at the end lists
+menu, and the 5th strike showing GAME OVER and closing the game once
+Enter is pressed. This document was the plan; **"As built"** at the end lists
 where the build differs from it.
 
 ## The game
@@ -16,10 +16,11 @@ where the build differs from it.
 3. On release the drawing is scored against the real figure:
    - **50% or more:** the figure is **collected** (first time), or you see
      **"NEW RECORD!"** or a rank tier if you beat or match your best.
-   - **Under 50%:** you get an **insult** and a **strike**.
-4. On the **5th strike** you get a **final diss**, it stays up for 4
-   seconds, and **the game closes**.
-5. Collect every figure to win. Progress and best scores are saved
+   - **Under 50%:** you get an **insult** and a **strike**. The insult
+     stays on screen until you press **Enter**.
+4. On the **5th strike** you get a **final diss** (GAME OVER). It stays
+   until you press **Enter**, and then **the game closes**.
+5. Collect every figure to win (Enter on the win screen opens your cases). Progress and best scores are saved
    between runs.
 
 ## Score format (matches the reference site)
@@ -118,6 +119,7 @@ be funny, in the style of a trash-talking arcade game. The pools are
 | Do strikes reset after a good drawing? | **no** (decided): 5 misses in total ends the game | — |
 | How is the target chosen? | first uncollected figure, in file order | random order |
 | Pass mark | **50.0%** | — |
+| How long a verdict stays on screen | insults stay **until the player presses Enter** (drawing and clicking are ignored meanwhile); passing verdicts 2.5 s or a click; the final diss (GAME OVER) also stays until Enter, which closes the game | — |
 | Faint "ghost" of your best attempt while drawing (as the site does)? | not built | add `Collect_view.ghost` |
 | Does a tiny stroke count as a strike? | yes, it scores 0.0% (the click that opens the mode is ignored, see below) | ignore strokes under ~20 points |
 
@@ -137,8 +139,10 @@ be funny, in the style of a trash-talking arcade game. The pools are
    still held when the mode starts and would otherwise be an instant 0%
    strike. Pen input is ignored until the button has been up for a frame.
 4. **Escape:** raylib no longer closes the window on Escape. The menu quits
-   on Escape, How to play and the reset confirm go back, and in either game
-   Escape returns to the menu (same as M).
+   on a second Escape (the first selects Quit), How to play and the reset
+   confirm go back, and in either game Escape returns to the menu (same as M).
+   Winning (`Complete`) never closes the game: Enter on the win screen opens
+   the case screen (`Collect.wants_cases`), M / Escape go to the menu.
 5. **`tolerance = 0.6` kept**, after calibrating on simulated drawings:
    wobble 0.10 → about 81%, wobble 0.20 → 63%, wobble 0.30 → 53%, wrong
    figure → about 14%. Real players haven't been measured yet; it's one

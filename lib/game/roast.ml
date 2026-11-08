@@ -1,6 +1,25 @@
+(**
+   File: roast.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Roast module: the strike counter, insults for
+                drawings under 50%, and the final diss on the 5th strike.
+   Usage: The contract is in roast.mli.
+          Import: add hack.game to (libraries ...) in a dune file, then use
+          Doodle_game.Roast (or Roast with -open Doodle_game).
+          Build: dune build    Test: dune test
+*)
+
 (* Insults, strikes and the final diss. See roast.mli for the contract. *)
 
-type t = { strikes : int; seed : int }
+type t = {
+  strikes : int;
+  seed : int;
+  extra_insults : string list; (* from unlocked insult packs *)
+  extra_disses : string list;
+}
+
 type verdict = Insult of string | Final_diss of string
 
 let max_strikes = 5
@@ -24,16 +43,17 @@ let final_disses =
     "Strike five. Go draw on a fogged-up window, the sky is closed to you." ]
 
 (**
-   [create ?seed ()] starts with no strikes.
+   [create ?seed ?extra_insults ?extra_disses ()] starts with no strikes.
    Requires: nothing
-   Returns: fresh roaster
+   Returns: fresh roaster whose pools are the base lines plus the extras
    Raises: nothing
    Example: strikes (create ()) = 0
    Complexity: O(1)
    Pseudocode:
-     return { strikes = 0; seed }
+     return { strikes = 0; seed; extra_insults; extra_disses }   (extras default [])
 *)
-let create ?(seed = 0) () = { strikes = 0; seed = abs seed }
+let create ?(seed = 0) ?(extra_insults = []) ?(extra_disses = []) () =
+  { strikes = 0; seed = abs seed; extra_insults; extra_disses }
 
 (**
    [strikes r] is the strike count.
@@ -97,7 +117,9 @@ let replace_all s ~sub ~by =
      replace every "{target}" with target
 *)
 let insult line ~score ~target =
-  replace_all (replace_all line ~sub:"{score}" ~by:(Accuracy.format score)) ~sub:"{target}" ~by:target
+  replace_all
+    (replace_all line ~sub:"{score}" ~by:(Accuracy.format score))
+    ~sub:"{target}" ~by:target
 
 (**
    [miss r ~score ~target] records a strike and picks a line.
@@ -110,8 +132,9 @@ let insult line ~score ~target =
      if r.strikes >= max_strikes then fail
      n <- r.strikes + 1
      pick <- (seed + 3 n) mod (length of the pool) (deterministic, varied)
-     if n = max_strikes then Final_diss (filled final line)
-     else Insult (filled insult line)
+     pools are the base lists plus the unlocked packs' extra lines
+     if n = max_strikes then Final_diss (filled line from final_disses @ extra_disses)
+     else Insult (filled line from insults @ extra_insults)
      return ({ r with strikes = n }, verdict)
 *)
 let miss r ~score ~target =
@@ -119,7 +142,8 @@ let miss r ~score ~target =
   let n = r.strikes + 1 in
   let pick pool = List.nth pool ((r.seed + (3 * n)) mod List.length pool) in
   let verdict =
-    if n = max_strikes then Final_diss (insult (pick final_disses) ~score ~target)
-    else Insult (insult (pick insults) ~score ~target)
+    if n = max_strikes then
+      Final_diss (insult (pick (final_disses @ r.extra_disses)) ~score ~target)
+    else Insult (insult (pick (insults @ r.extra_insults)) ~score ~target)
   in
   ({ r with strikes = n }, verdict)

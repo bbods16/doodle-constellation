@@ -1,3 +1,15 @@
+(**
+   File: welcome.ml
+   Author: GitBetterKid
+   Created: 2026-11-07
+
+   Description: Implementation of the Welcome module: the welcome screen glue - Title
+                (rules) + Title_view (drawing) + the saved progress file.
+   Usage: The contract is in welcome.mli.
+          Part of the hack executable (needs raylib and ctypes from opam).
+          Build: dune build    Run: dune exec hack (from the repo root)
+*)
+
 (* The welcome page as a screen: glue between Title, Title_view and the
    saved progress. See welcome.mli for the contract. *)
 
@@ -18,19 +30,35 @@ let name = "welcome"
 let progress_path ctx = Filename.concat (Scene.data_dir ctx) Collect.progress_file
 
 (**
-   [summary_of c] is the progress line shown under the Collect button.
+   [unlocks_path ctx] is where cases and unlocked packs are saved.
+   Requires: nothing
+   Returns: <data folder>/unlocks.csv
+   Raises: nothing
+   Example: unlocks_path ctx = "data/unlocks.csv"
+   Complexity: O(1)
+   Pseudocode:
+     return Filename.concat (Scene.data_dir ctx) Inventory.unlocks_file
+*)
+let unlocks_path ctx = Filename.concat (Scene.data_dir ctx) Inventory.unlocks_file
+
+(**
+   [summary_of c inv] is the progress shown under the Collect and Open
+   cases buttons.
    Requires: nothing
    Returns: [None] when there are no figures; otherwise collected count,
-            total, and the mean best score over attempted figures
+            total, the mean best score over attempted figures, and the
+            case and pack counts
    Raises: nothing
-   Example: summary_of (Collection.create figures) = Some { collected = 0; total = 7; best_average = None }
+   Example: summary_of (Collection.create figures) Inventory.empty
+            = Some { collected = 0; total = 7; best_average = None; cases = 0; packs_owned = 0 }
    Complexity: O(n)
    Pseudocode:
      if total c = 0 then None
      bests <- best score of each attempted figure
-     Some { collected_count c; total c; mean bests (None if no attempts) }
+     Some { collected_count c; total c; mean bests (None if no attempts);
+            Inventory.cases inv; number of owned packs }
 *)
-let summary_of c =
+let summary_of c inv =
   if Collection.total c = 0 then None
   else begin
     let bests =
@@ -41,11 +69,13 @@ let summary_of c =
       if bests = [] then None
       else Some (List.fold_left ( +. ) 0. bests /. float_of_int (List.length bests))
     in
-    Some { Title.collected = Collection.collected_count c; total = Collection.total c; best_average }
+    Some
+      { Title.collected = Collection.collected_count c; total = Collection.total c; best_average;
+        cases = Inventory.cases inv; packs_owned = List.length (Inventory.owned_packs inv) }
   end
 
 (**
-   [init ctx] opens the welcome page with the saved progress.
+   [init ctx] opens the welcome page with the saved progress and unlocks.
    Requires: nothing
    Returns: Title.init on the figures and their progress summary
    Raises: nothing
@@ -53,11 +83,14 @@ let summary_of c =
    Complexity: O(n + F)
    Pseudocode:
      figures <- Scene.figures ctx
-     return Title.init figures (summary_of (Collection.load figures (progress_path ctx)))
+     c <- Collection.load figures (progress_path ctx)
+     inv <- Inventory.load (unlocks_path ctx)
+     return Title.init figures (summary_of c inv)
 *)
 let init ctx =
   let figures = Scene.figures ctx in
-  Title.init figures (summary_of (Collection.load figures (progress_path ctx)))
+  Title.init figures
+    (summary_of (Collection.load figures (progress_path ctx)) (Inventory.load (unlocks_path ctx)))
 
 (**
    [update ctx inp t] is one frame of the welcome page.
