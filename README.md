@@ -27,20 +27,25 @@ library is split into layers, each with one interface file.
 | Path | What it is |
 | --- | --- |
 | `lib/core/` | Layer 1: geometry (`Geom`, `Skyvec`) |
-| `lib/sky/` | Layer 2: star catalogue and visibility (`Catalogue`, `Visibility`) |
+| `lib/sky/` | Layer 2: star catalogue, visibility, data-folder lookup (`Catalogue`, `Visibility`, `Data_dir`); planned: `Asterism` |
 | `lib/matching/` | Layer 3: stroke → star pattern (`Capture`, `Simplify`, `Index`, `Candidates`, `Fitter`) |
 | `lib/recognition/` | Layer 3b: trained recognition engine (`Engine`) |
-| `lib/game/` | Layer 4: screen framework and game rules (`Scene`, `Controls`, `Game`, `Projection`, `Morph`, `Narrate`) |
-| `bin/` | Layer 5: raylib app (`App` loop, `Welcome` and `Play` screens, `Play_view`, `Sky` renderer, `Main`) |
+| `lib/game/` | Layer 4: screen framework and game rules (`Scene`, `Controls`, `Game`, `Projection`, `Morph`, `Narrate`); planned: `Accuracy`, `Collection`, `Roast`, `Judge`, `Collect`, `Menu`, `Title`, `Attract` |
+| `bin/` | Layer 5: raylib app (`App` loop, `Welcome` and `Play` screens, `Play_view`, `Sky` renderer, `Main`); planned: `Collect_scene`, `Collect_view`, `Title_view` |
 | `test/` | OUnit2 tests, including end-to-end matches and an OCaml-vs-PyTorch agreement test for the engine |
 | `engine/train.py` | Synthetic data generator, transformer training and weight export |
 | `data/stars.csv` | Sample bright-star catalogue (48 stars; coordinates entered by hand, approximate) |
-| `data/asterisms.csv` | Constellation figures the engine learns, as star ids in drawing order |
+| `data/asterisms.csv` | Constellation figures: what the engine learns and, once built, what collect mode asks for |
 | `data/engine_weights.txt` | Trained engine weights (plain text) |
 | `proofs/` | Lean 4 + Mathlib proofs |
 | `docs/PROOFS.md` | Every theorem explained in paragraphs, mapped to the OCaml code |
-
 | `docs/SCENES.md` | How to add a screen |
+| `docs/COLLECT_PLAN.md` | Plan for collect mode (draw each constellation, live %, insults, 5 strikes) |
+| `docs/WELCOME_PLAN.md` | Plan for the new welcome page (menu, how to play, reset, animation) |
+
+"Planned" modules are designed and compile, but their functions are
+stubs (`not implemented yet`) and nothing calls them yet; see the plan
+docs.
 
 Every OCaml function is documented with the project template
 (`[name args] is…`, Requires, Returns, Raises, Example, Complexity), and
