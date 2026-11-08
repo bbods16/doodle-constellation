@@ -26,6 +26,30 @@ The geometry the matcher and engine depend on is proved in **Lean 4 with
 Mathlib** (`proofs/`) and explained in prose in
 [docs/PROOFS.md](docs/PROOFS.md).
 
+## Constellation Sketch (`game/`)
+
+A browser game built on a CNN that recognises line-only constellation drawings.
+Each of **10 rounds** shows a random constellation and its shape for a few
+seconds; then you draw it with lines only, using Apple Pencil, a finger or a mouse.
+**Submit** sends a screenshot of the canvas to the model, and you score **the
+model's confidence that your drawing is that constellation**: 35% sure is
+35 points. The best possible game is 1000.
+
+Every submitted drawing is saved to `game/drawings/<constellation>/` (git-ignored),
+so the model can be measured on, and later retrained with, real drawings:
+`python ../CNN/constellation_cnn.py evaluate game/drawings`.
+
+```bash
+uv venv --python 3.12 .venv-game
+uv pip install --python .venv-game -r game/requirements.txt
+.venv-game/bin/python game/server.py             # prints a localhost URL and a LAN URL for the iPad
+.venv-game/bin/python -m pytest game/test_server.py -q
+```
+
+Open the LAN URL in Safari on an iPad on the same wifi to play with Apple Pencil.
+The model (`game/model/`) was trained in a separate project. It reaches about 87%
+on simulated screenshots, but it hasn't been measured on real player drawings yet.
+
 ## Layout
 
 **New to the code? Read [ARCHITECTURE.md](ARCHITECTURE.md) first.** The

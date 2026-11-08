@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Constellation Sketch</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header id="hud">
+    <div class="target">
+      <span class="label">Draw</span>
+      <span id="target-name">—</span>
+    </div>
+    <div class="stats">
+      <div><span class="label">Round</span> <span id="round">1</span> / <span id="rounds">10</span></div>
+      <div><span class="label">Points</span> <span id="points">0</span></div>
+    </div>
+  </header>
+
+  <main id="stage">
+    <canvas id="board"></canvas>
+    <canvas id="preview"></canvas>
+
+    <div id="preview-caption" class="caption hidden">
+      <div id="preview-name"></div>
+      <div>Memorise the shape — drawing starts in <span id="countdown">4</span>s</div>
+      <div class="tip">Tip: connect the stars with straight lines</div>
+      <button id="skip-preview" class="small">I'm ready</button>
+    </div>
+
+    <div id="banner" class="hidden"></div>
+
+    <section id="result" class="hidden">
+      <div id="result-points"></div>
+      <div id="result-guesses" class="detail"></div>
+      <div class="fact">
+        <div class="fact-title">✨ Did you know? <span id="fact-name"></span></div>
+        <div id="result-fact"></div>
+      </div>
+      <button id="next-btn">Next</button>
+    </section>
+
+    <section id="start" class="overlay">
+      <h1>Constellation Sketch</h1>
+      <p>10 rounds. Each round you're shown a constellation — draw it with lines only.<br>
+        The judge scores you by how sure it is that your drawing is that constellation:<br>
+        35% sure = 35 points. The best possible game is 1000.</p>
+      <button id="start-btn">Start</button>
+    </section>
+
+    <section id="gameover" class="overlay hidden">
+      <h1>Game over</h1>
+      <p class="final">Score: <span id="final-score">0</span> / <span id="final-total">1000</span></p>
+      <ul id="history"></ul>
+      <button id="again-btn">Play again</button>
+    </section>
+  </main>
+
+  <footer id="tools">
+    <button id="draw-btn" class="tool active">✏️ Draw</button>
+    <button id="erase-btn" class="tool">🧽 Erase</button>
+    <button id="clear-btn" class="tool">Clear</button>
+    <button id="submit-btn" class="primary">Submit</button>
+  </footer>
+
+  <script src="/static/game.js"></script>
+</body>
+</html>
