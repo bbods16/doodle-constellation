@@ -27,6 +27,12 @@
     {- {!Judge}      — one score → one verdict (collected, record, insult, game over).}
     {- {!Collect}    — the mode's state machine: prompt, draw, verdict, quit.}}
 
+    {2 PLANNED: welcome page (interfaces only, stubs; see docs/WELCOME_PLAN.md)}
+    {ul
+    {- {!Menu}       — generic keyboard + mouse menu: items, selection, layout, hit-test.}
+    {- {!Title}      — the welcome page's rules: main menu, how to play, confirm reset.}
+    {- {!Attract}    — background animation: figures drawing themselves star by star.}}
+
     {2 Key types}
     {ul
     {- [Scene.ctx]        — resources shared by every screen (abstract).}
@@ -48,3 +54,6 @@ module Judge = Judge
 module Roast = Roast
 module Collection = Collection
 module Accuracy = Accuracy
+module Menu = Menu
+module Title = Title
+module Attract = Attract

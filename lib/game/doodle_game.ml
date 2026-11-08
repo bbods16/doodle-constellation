@@ -11,3 +11,6 @@ module Judge = Judge
 module Roast = Roast
 module Collection = Collection
 module Accuracy = Accuracy
+module Menu = Menu
+module Title = Title
+module Attract = Attract
