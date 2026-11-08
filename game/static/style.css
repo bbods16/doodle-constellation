@@ -1,0 +1,214 @@
+:root {
+  --sky: rgb(8, 10, 24);
+  --panel: #12162e;
+  --ink: #78beff;
+  --text: #dfe6f5;
+  --muted: #8a93b0;
+  --good: #4ade80;
+  --bad: #f87171;
+  --gold: #fbbf24;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #05060f;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+#hud, #tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 0.4rem;
+}
+
+#target-name {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 1.1rem;
+}
+
+.tip { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+
+#stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+#board, #preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#board {
+  background: var(--sky);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+#preview { pointer-events: none; }
+
+.caption {
+  position: absolute;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(18, 22, 46, 0.9);
+  padding: 0.8rem 1.4rem;
+  border-radius: 0.8rem;
+}
+
+#preview-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 0.3rem;
+}
+
+#banner {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.8rem 1.4rem;
+  border-radius: 0.8rem;
+  font-size: 1.15rem;
+  text-align: center;
+  background: rgba(18, 22, 46, 0.95);
+  max-width: 90%;
+}
+
+#banner.good { border: 2px solid var(--good); }
+#banner.bad { border: 2px solid var(--bad); }
+#banner.okay { border: 2px solid var(--gold); }
+#banner .detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+
+#result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(36rem, 90%);
+  padding: 1.4rem 1.6rem;
+  border-radius: 1rem;
+  background: rgba(18, 22, 46, 0.96);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+#result.good { border: 2px solid var(--good); }
+#result.okay { border: 2px solid var(--gold); }
+#result.bad { border: 2px solid var(--bad); }
+#result-points { font-size: 1.25rem; font-weight: 600; }
+#result .detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+
+.fact {
+  margin: 1.1rem 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.7rem;
+  background: rgba(120, 190, 255, 0.08);
+  text-align: left;
+  line-height: 1.5;
+}
+
+.fact-title { color: var(--gold); font-weight: 600; margin-bottom: 0.3rem; }
+
+#next-btn {
+  background: var(--ink);
+  color: #06102a;
+  border: none;
+  font-weight: 700;
+  padding: 0.8rem 2.2rem;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(5, 6, 15, 0.92);
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.overlay h1 { font-size: 2.4rem; margin: 0 0 1rem; }
+.overlay p { line-height: 1.6; color: var(--muted); }
+.final { font-size: 1.6rem; color: var(--text) !important; }
+
+#history {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  max-height: 40vh;
+  overflow-y: auto;
+  min-width: 18rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+#history li { display: flex; justify-content: space-between; gap: 1.5rem; }
+#history .pts { font-variant-numeric: tabular-nums; font-weight: 600; }
+#history .good .pts { color: var(--good); }
+#history .okay .pts { color: var(--gold); }
+#history .bad .pts { color: var(--bad); }
+
+button {
+  font: inherit;
+  font-size: 1.05rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 0.7rem;
+  border: 1px solid #2b3260;
+  background: #1b2045;
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled { opacity: 0.45; cursor: default; }
+button.small { font-size: 0.9rem; padding: 0.4rem 0.9rem; margin-top: 0.5rem; }
+.tool.active { border-color: var(--ink); color: var(--ink); }
+
+button.primary, #start-btn, #again-btn {
+  background: var(--ink);
+  color: #06102a;
+  border: none;
+  font-weight: 700;
+  padding: 0.8rem 2.2rem;
+}
+
+.hidden { display: none !important; }
